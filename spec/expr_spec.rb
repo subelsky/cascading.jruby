@@ -30,26 +30,32 @@ describe Object do
 
   it 'should evaluate expressions' do
     e = ExprStub.new('x:int + y:int')
-    result = e.evaluate([2, 3])
+    result = e.eval(:x => 2, :y => 3)
     result.should == 5
   end
 
-  it 'should throw an exception for invalid actual parameters' do
+  it 'should evaluate expressions despite argument order' do
     e = ExprStub.new('x:int + y:int')
-    lambda{ e.evaluate([2, 'blah']) }.should raise_error ExprArgException
+    result = e.eval(:y => 3, :x => 2)
+    result.should == 5
   end
 
-  it 'should throw an exception for missing actual parameters' do
+  it 'should throw an exception for invalid actual arguments' do
     e = ExprStub.new('x:int + y:int')
-    lambda{ e.evaluate([2]) }.should raise_error ExprArgException
+    lambda{ e.eval(:x => 2, :y => 'blah') }.should raise_error ExprArgException
   end
 
-  it 'should throw an exception for null actual parameters' do
+  it 'should throw an exception for missing actual arguments' do
     e = ExprStub.new('x:int + y:int')
-    lambda{ e.evaluate([2, nil]) }.should raise_error ExprArgException
+    lambda{ e.eval(:x => 2) }.should raise_error ExprArgException
   end
 
-  it 'should use default actual parameters to test evaluation' do
+  it 'should throw an exception for null actual arguments' do
+    e = ExprStub.new('x:int + y:int')
+    lambda{ e.eval(:x => 2, :y => nil) }.should raise_error ExprArgException
+  end
+
+  it 'should use default actual arguments to test evaluation' do
     e = ExprStub.new('x:int + y:int')
     result = e.test_evaluate
     result.should == 0

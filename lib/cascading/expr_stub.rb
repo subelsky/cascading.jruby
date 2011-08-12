@@ -23,17 +23,17 @@ class ExprStub
     self
   end
 
-  # Evaluate this ExprStub given an array of actual arguments.  Throws an
-  # ExprException upon failure. GOTCHA: requires values to be in order of
-  # lexicographically sorted formal arguments.
-  def evaluate(values)
-    begin
-      evaluator.evaluate(values.to_java)
-    rescue java.lang.IllegalArgumentException => iae
-      raise ExprArgException.new("Invalid arguments for expression '#{@expression}': #{values.inspect}\n#{iae}")
-    rescue java.lang.reflect.InvocationTargetException => ite
-      raise ExprArgException.new("Null arguments for expression '#{@expression}': #{values.inspect}\n#{iae}")
+  # Evaluated this ExprStub given a hash mapping argument names to argument
+  # values.  Names may be strings or symbols. Throws an ExprException upon
+  # failure.
+  def eval(actual_args)
+    actual_args = actual_args.inject({}) do |string_keys, (arg, value)|
+      string_keys[arg.to_s] = value
+      string_keys
     end
+    args, values = split_hash(actual_args)
+    validate_fields(args.map{ |arg| arg.to_s })
+    evaluate(values)
   end
 
   # Evaluates this ExprStub with default values for each actual argument.
@@ -58,6 +58,26 @@ class ExprStub
 
   private
 
+  def split_hash(h)
+    keys, values = h.sort.inject([[], []]) do |(keys, values), (key, value)|
+      [keys << key, values << value]
+    end
+    [keys, values]
+  end
+
+  # Evaluate this ExprStub given an array of actual arguments.  Throws an
+  # ExprException upon failure. GOTCHA: requires values to be in order of
+  # lexicographically sorted formal arguments.
+  def evaluate(values)
+    begin
+      evaluator.evaluate(values.to_java)
+    rescue java.lang.IllegalArgumentException => iae
+      raise ExprArgException.new("Invalid arguments for expression '#{@expression}': #{values.inspect}\n#{iae}")
+    rescue java.lang.reflect.InvocationTargetException => ite
+      raise ExprArgException.new("Null arguments for expression '#{@expression}': #{values.inspect}\n#{iae}")
+    end
+  end
+
   # Building an evaluator ensures that the expression scans, parses, and
   # compiles
   def evaluator
@@ -75,9 +95,7 @@ class ExprStub
 
   # Extract Java names and types from @types hash
   def names_and_types
-    names, types = @types.sort.inject([[], []]) do |(names, types), (name, type)|
-      [names << name, types << type]
-    end
+    names, types = split_hash(@types)
     [names.to_java(java.lang.String), types.to_java(java.lang.Class)]
   end
 
