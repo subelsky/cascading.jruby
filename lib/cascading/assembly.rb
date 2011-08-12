@@ -618,7 +618,7 @@ module Cascading
       expression = options.delete(:expression) || args.shift
       regex = options.delete(:pattern)
       if expression
-        stub = ExprStub.new(expression)
+        stub = expr(expression)
         types, expression = stub.types, stub.expression
 
         each from, :filter => expression_filter(

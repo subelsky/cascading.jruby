@@ -16,18 +16,26 @@ class ExprStub
     end
   end
 
-  def self.split_hash(h)
-    keys, values = h.keys.sort, []
-    keys.each do |key|
-      values << h[key]
+  def compile
+    begin
+      names, types = @types.sort.inject([[], []]) do |(names, types), (name, type)|
+        names << name
+        types << type
+        [names, types]
+      end
+      evaluator = Java::OrgCodehausJanino::ExpressionEvaluator.new(@expression, java.lang.Comparable.java_class, names.to_java(java.lang.String), types.to_java(java.lang.Class))
+    rescue Java::OrgCodehausJanino::CompileException => ce
+      raise ExprCompileException.new("Failed to compile expression '#{@expression}':\n#{ce}")
+    rescue Java::OrgCodehausJanino::Parser::ParseException => pe
+      raise ExprParseException.new("Failed to parse expression '#{@expression}':\n#{pe}")
+    rescue Java::OrgCodehausJanino::Scanner::ScanException => se
+      raise ExprScanException.new("Failed to scan expression '#{@expression}':\n#{se}")
     end
-    [keys, values]
-  end
-
-  def self.split_names_and_types(expr_types)
-    names, types = split_hash(expr_types)
-    names = names.to_java(java.lang.String)
-    types = types.to_java(java.lang.Class)
-    [names, types]
+    self
   end
 end
+
+class ExprException < StandardError; end
+class ExprCompileException < ExprException; end
+class ExprParseException < ExprException; end
+class ExprScanException < ExprException; end
