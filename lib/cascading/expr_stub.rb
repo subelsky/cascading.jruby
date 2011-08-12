@@ -42,6 +42,20 @@ class ExprStub
     evaluate(test_values)
   end
 
+  def validate_scope(scope)
+    validate_fields(scope.values_fields.to_a)
+  end
+
+  def validate_fields(fields)
+    names = @types.keys.sort
+    missing = names - fields
+
+    #unused = fields - names
+    #puts "Expression '#{@expression}' does not use these fields: #{unused.inspect}"
+
+    raise ExprArgException.new("Expression '#{@expression}' is missing these fields: #{missing.inspect}\nRequires: #{names.inspect}, found: #{fields.inspect}") unless missing.empty?
+  end
+
   private
 
   # Building an evaluator ensures that the expression scans, parses, and

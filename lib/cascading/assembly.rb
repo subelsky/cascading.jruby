@@ -593,6 +593,7 @@ module Cascading
         value = args[field_name]
 
         if value.kind_of?(ExprStub)
+          value.validate_scope(scope)
           each all_fields, :function => expression_function(field_name, :expression => value.expression, :parameters => value.types), :output => all_fields
         else
           each all_fields, :function => insert_function([field_name], :values => [value]), :output => all_fields
@@ -619,6 +620,7 @@ module Cascading
         stub = expr(expression)
         types, expression = stub.types, stub.expression
 
+        stub.validate_scope(scope)
         each from, :filter => expression_filter(
           :parameters => types,
           :expression => expression

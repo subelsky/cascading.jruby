@@ -74,4 +74,20 @@ describe Object do
     result = e.test_evaluate
     result.should == false
   end
+
+  it 'should catch missing fields in filter expressions' do
+    lambda do
+      test_assembly do
+        filter :expression => 'doesnotexist:int > offset:int'
+      end
+    end.should raise_error ExprArgException
+  end
+
+  it 'should catch missing fields in insert expressions' do
+    lambda do
+      test_assembly do
+        insert 'foo' => 1, 'bar' => expr('doesnotexist:int + offset:int')
+      end
+    end.should raise_error ExprArgException
+  end
 end
