@@ -593,9 +593,7 @@ module Cascading
         value = args[field_name]
 
         if value.kind_of?(ExprStub)
-          each all_fields,
-            :function => expression_function(field_name, :expression => value.expression,
-                           :parameters => value.types), :output => all_fields
+          each all_fields, :function => expression_function(field_name, :expression => value.expression, :parameters => value.types), :output => all_fields
         else
           each all_fields, :function => insert_function([field_name], :values => [value]), :output => all_fields
         end

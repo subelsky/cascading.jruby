@@ -27,7 +27,9 @@ module Cascading
 
   def expr(s)
     return s if s.kind_of?(ExprStub)
-    ExprStub.new(s).compile
+    e = ExprStub.new(s).compile
+    e.test_evaluate
+    e
   end
 
   # Creates a cascading.tuple.Fields instance from a string or an array of strings.
