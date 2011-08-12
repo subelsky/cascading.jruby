@@ -89,6 +89,9 @@ describe Object do
 
     e = ExprStub.new('x:long + y:int')
     lambda{ e.eval(:x => [], :y => 3) }.should raise_error ExprArgException
+
+    e = ExprStub.new('x:long + y:int')
+    lambda{ e.eval(:x => nil, :y => 3) }.should raise_error ExprArgException
   end
 
   it 'should throw an exception for missing actual arguments' do
@@ -96,9 +99,10 @@ describe Object do
     lambda{ e.eval(:x => 2) }.should raise_error ExprArgException
   end
 
-  it 'should throw an exception for null actual arguments' do
+  it 'should ignore extraneous actual arguments' do
     e = ExprStub.new('x:int + y:int')
-    lambda{ e.eval(:x => 2, :y => nil) }.should raise_error ExprArgException
+    result = e.eval(:x => 2, :y => 3, :z => 'unused')
+    result.should == 5
   end
 
   it 'should use default actual arguments to test evaluation' do

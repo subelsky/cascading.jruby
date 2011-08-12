@@ -32,7 +32,8 @@ class ExprStub
       string_keys
     end
     args, values = split_hash(actual_args)
-    validate_fields(args)
+    unused = validate_fields(args)
+    return self.eval(actual_args.reject{ |arg, value| unused.include?(arg) }) unless unused.empty?
     evaluate(values)
   end
 
@@ -46,14 +47,13 @@ class ExprStub
     validate_fields(scope.values_fields.to_a)
   end
 
+  # Throws an exception if any arguments required by this ExprStub are missing
+  # from fields.  Returns those fields which are unused.
   def validate_fields(fields)
     names = @types.keys.sort
     missing = names - fields
-
-    #unused = fields - names
-    #puts "Expression '#{@expression}' does not use these fields: #{unused.inspect}"
-
     raise ExprArgException.new("Expression '#{@expression}' is missing these fields: #{missing.inspect}\nRequires: #{names.inspect}, found: #{fields.inspect}") unless missing.empty?
+    fields - names
   end
 
   private
