@@ -76,6 +76,14 @@ describe Object do
     e = ExprStub.new('x:long + y:int')
     lambda{ e.eval(:x => '2', :y => 3) }.should raise_error ExprArgException
 
+    # eval should not coerce floats to Java Longs
+    e = ExprStub.new('x:long + y:int')
+    lambda{ e.eval(:x => 2.0, :y => 3) }.should raise_error ExprArgException
+
+    # eval should not coerce integers to Java Floats
+    e = ExprStub.new('x:int + y:float')
+    lambda{ e.eval(:x => 2, :y => 3) }.should raise_error ExprArgException
+
     e = ExprStub.new('x:float + y:int')
     lambda{ e.eval(:x => 'blah', :y => 3) }.should raise_error ExprArgException
 

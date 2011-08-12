@@ -109,8 +109,12 @@ class ExprStub
     # would fail.  We therefore punt if value is a String.
     return value if value.kind_of?(::String)
     case type
-      when java.lang.Float.java_class then java.lang.Float.new(value) rescue value
-      when java.lang.Long.java_class then java.lang.Long.new(value) rescue value
+      when java.lang.Float.java_class
+        return value if value.kind_of?(::Integer)
+        java.lang.Float.new(value) rescue value
+      when java.lang.Long.java_class
+        return value if value.kind_of?(::Float)
+        java.lang.Long.new(value) rescue value
       else value
     end
   end
