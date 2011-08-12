@@ -32,6 +32,26 @@ describe Object do
     e = ExprStub.new('x:int + y:int')
     result = e.eval(:x => 2, :y => 3)
     result.should == 5
+
+    e = ExprStub.new('x:int + y:string')
+    result = e.eval(:x => 2, :y => 'blah')
+    result.should == '2blah'
+
+    e = ExprStub.new('x:long + y:int')
+    result = e.eval(:x => 2, :y => 3)
+    result.should == 5
+
+    e = ExprStub.new('x:double + y:int')
+    result = e.eval(:x => 2.0, :y => 3)
+    result.should == 5.0
+
+    e = ExprStub.new('x:float + y:int')
+    result = e.eval(:x => 2.0, :y => 3)
+    result.should == 5.0
+
+    e = ExprStub.new('x:bool && y:bool')
+    result = e.eval(:x => true, :y => false)
+    result.should == false
   end
 
   it 'should evaluate expressions despite argument order' do
@@ -43,6 +63,24 @@ describe Object do
   it 'should throw an exception for invalid actual arguments' do
     e = ExprStub.new('x:int + y:int')
     lambda{ e.eval(:x => 2, :y => 'blah') }.should raise_error ExprArgException
+
+    # Janino does not coerce numeric strings to Java Integers
+    e = ExprStub.new('x:int + y:int')
+    lambda{ e.eval(:x => 2, :y => '3') }.should raise_error ExprArgException
+
+    # eval should not coerce numeric strings to Java Floats
+    e = ExprStub.new('x:int + y:float')
+    lambda{ e.eval(:x => 2, :y => '3') }.should raise_error ExprArgException
+
+    # eval should not coerce numeric strings to Java Longs
+    e = ExprStub.new('x:long + y:int')
+    lambda{ e.eval(:x => '2', :y => 3) }.should raise_error ExprArgException
+
+    e = ExprStub.new('x:float + y:int')
+    lambda{ e.eval(:x => 'blah', :y => 3) }.should raise_error ExprArgException
+
+    e = ExprStub.new('x:long + y:int')
+    lambda{ e.eval(:x => [], :y => 3) }.should raise_error ExprArgException
   end
 
   it 'should throw an exception for missing actual arguments' do

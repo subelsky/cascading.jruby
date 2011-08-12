@@ -23,16 +23,16 @@ class ExprStub
     self
   end
 
-  # Evaluated this ExprStub given a hash mapping argument names to argument
+  # Evaluates this ExprStub given a hash mapping argument names to argument
   # values.  Names may be strings or symbols. Throws an ExprException upon
   # failure.
   def eval(actual_args)
     actual_args = actual_args.inject({}) do |string_keys, (arg, value)|
-      string_keys[arg.to_s] = value
+      string_keys[arg.to_s] = specific_to_java(value, @types[arg.to_s])
       string_keys
     end
     args, values = split_hash(actual_args)
-    validate_fields(args.map{ |arg| arg.to_s })
+    validate_fields(args)
     evaluate(values)
   end
 
@@ -97,6 +97,22 @@ class ExprStub
   def names_and_types
     names, types = split_hash(@types)
     [names.to_java(java.lang.String), types.to_java(java.lang.Class)]
+  end
+
+  # Makes best effort to convert Ruby numbers into Floats or Longs for a Janino
+  # expression.  However, if the conversion fails, it returns the original
+  # value so that the exception thrown will be from Janino, not this code.
+  def specific_to_java(value, type)
+    # GOTCHA: Java's Float and Long have constructors that take strings and
+    # parse them.  If value is a string representation of a number, this code
+    # could coerce it to a number whereas invocation of the Janino expression
+    # would fail.  We therefore punt if value is a String.
+    return value if value.kind_of?(::String)
+    case type
+      when java.lang.Float.java_class then java.lang.Float.new(value) rescue value
+      when java.lang.Long.java_class then java.lang.Long.new(value) rescue value
+      else value
+    end
   end
 
   @@defaults = {
