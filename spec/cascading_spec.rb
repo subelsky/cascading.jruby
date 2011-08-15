@@ -1,6 +1,11 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe Cascading do
+  it 'should handle string and integer field names' do
+    f = fields(['a', 1, 'b', 2])
+    f.to_a.should == ['a', 1, 'b', 2]
+  end
+
   it 'should dedup field names from multiple sources' do
     left_names = ['a', 'b', 'c', 'd', 'e']
     mid_names = ['a', 'f']

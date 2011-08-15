@@ -15,6 +15,12 @@ describe Object do
       result.should == 0
     end
   when '1.4.0'
+    # This test previously failed for 1.4.0 (it's duplicated in cascading_spec)
+    it 'should handle string and integer field names' do
+      f = fields(['a', 1, 'b', 2])
+      f.to_a.should == ['a', 1, 'b', 2]
+    end
+
     it 'should handle Fixnum -> Integer for ExprStub#eval' do
       e = ExprStub.new('x:int + y:int')
       result = e.eval(:x => 2, :y => 3)

@@ -44,7 +44,7 @@ module Cascading
       end
       raise "Fields cannot be nil: #{fields.inspect}" if fields.include?(nil)
     end
-    return Java::CascadingTuple::Fields.new([fields].flatten.map{ |f| f.kind_of?(Fixnum) && JRUBY_VERSION > '1.2.0' ? f.to_java(:int) : f }.to_java(java.lang.Comparable))
+    return Java::CascadingTuple::Fields.new([fields].flatten.map{ |f| f.kind_of?(Fixnum) ? java.lang.Integer.new(f) : f }.to_java(java.lang.Comparable))
   end
 
   def all_fields
