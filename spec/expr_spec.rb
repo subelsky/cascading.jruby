@@ -1,6 +1,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-describe Object do
+describe ExprStub do
   it 'should allow expr syntax' do
     test_assembly do
       insert 'foo' => 1, 'bar' => expr('offset:int')
