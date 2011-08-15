@@ -1,6 +1,28 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe Object do
+  it 'should definitely not do this' do
+    names = ['x', 'y'].to_java(java.lang.String)
+    types = [java.lang.Integer.java_class, java.lang.Integer.java_class].to_java(java.lang.Class)
+    evaluator = Java::OrgCodehausJanino::ExpressionEvaluator.new('x + y', java.lang.Comparable.java_class, names, types)
+
+    thrown = nil
+    exception = nil
+    begin
+      evaluator.evaluate([nil, nil].to_java)
+    rescue java.lang.IllegalArgumentException => iae
+      thrown = 'IllegalArgumentException'
+      exception = iae
+    rescue java.lang.reflect.InvocationTargetException => ite
+      thrown = 'InvocationTargetException'
+      exception = ite
+    end
+
+    # How can this be?  A nil exception?
+    thrown.should == 'InvocationTargetException'
+    exception.should be_nil
+  end
+
   case JRUBY_VERSION
   when '1.2.0'
     it 'should handle Fixnum -> Long for ExprStub#eval' do
