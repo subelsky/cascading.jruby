@@ -71,10 +71,8 @@ class ExprStub
   def evaluate(values)
     begin
       evaluator.evaluate(values.to_java)
-    rescue java.lang.IllegalArgumentException => iae
-      raise ExprArgException.new("Invalid arguments for expression '#{@expression}': #{values.inspect}\n#{iae}")
-    rescue java.lang.reflect.InvocationTargetException => ite
-      raise ExprArgException.new("Null arguments for expression '#{@expression}': #{values.inspect}\n#{iae}")
+    rescue NativeException => ne
+      raise CascadingException.new(ne, "Exception encountered while evaluating '#{@expression}' with arguments: #{values.inspect}")
     end
   end
 
@@ -84,12 +82,8 @@ class ExprStub
     begin
       names, types = names_and_types
       Java::OrgCodehausJanino::ExpressionEvaluator.new(@expression, java.lang.Comparable.java_class, names, types)
-    rescue Java::OrgCodehausJanino::CompileException => ce
-      raise ExprCompileException.new("Failed to compile expression '#{@expression}':\n#{ce}")
-    rescue Java::OrgCodehausJanino::Parser::ParseException => pe
-      raise ExprParseException.new("Failed to parse expression '#{@expression}':\n#{pe}")
-    rescue Java::OrgCodehausJanino::Scanner::ScanException => se
-      raise ExprScanException.new("Failed to scan expression '#{@expression}':\n#{se}")
+    rescue NativeException => ne
+      raise CascadingException.new(ne, "Exception encountered while compiling '#{@expression}'")
     end
   end
 
@@ -139,8 +133,4 @@ class ExprStub
   end
 end
 
-class ExprException < StandardError; end
-class ExprCompileException < ExprException; end
-class ExprParseException < ExprException; end
-class ExprScanException < ExprException; end
-class ExprArgException < ExprException; end
+class ExprArgException < StandardError; end

@@ -15,17 +15,17 @@ describe ExprStub do
 
   it 'should throw an exception for parsing failures' do
     e = ExprStub.new('x:int + doesnotparse y:string')
-    lambda{ e.compile }.should raise_error ExprParseException
-  end
+    lambda{ e.compile }.should raise_error CascadingException
+end
 
   it 'should throw an exception for compile failures' do
     e = ExprStub.new('new DoesNotExist(x:int).doesnotcompile()')
-    lambda{ e.compile }.should raise_error ExprCompileException
+    lambda{ e.compile }.should raise_error CascadingException
   end
 
   it 'should throw an exception for compile failures' do
     e = ExprStub.new('true ? x:int : y:string')
-    lambda{ e.compile }.should raise_error ExprCompileException
+    lambda{ e.compile }.should raise_error CascadingException
   end
 
   it 'should evaluate expressions' do
@@ -62,36 +62,36 @@ describe ExprStub do
 
   it 'should throw an exception for invalid actual arguments' do
     e = ExprStub.new('x:int + y:int')
-    lambda{ e.eval(:x => 2, :y => 'blah') }.should raise_error ExprArgException
+    lambda{ e.eval(:x => 2, :y => 'blah') }.should raise_error CascadingException
 
     # Janino does not coerce numeric strings to Java Integers
     e = ExprStub.new('x:int + y:int')
-    lambda{ e.eval(:x => 2, :y => '3') }.should raise_error ExprArgException
+    lambda{ e.eval(:x => 2, :y => '3') }.should raise_error CascadingException
 
     # eval should not coerce numeric strings to Java Floats
     e = ExprStub.new('x:int + y:float')
-    lambda{ e.eval(:x => 2, :y => '3') }.should raise_error ExprArgException
+    lambda{ e.eval(:x => 2, :y => '3') }.should raise_error CascadingException
 
     # eval should not coerce numeric strings to Java Longs
     e = ExprStub.new('x:long + y:int')
-    lambda{ e.eval(:x => '2', :y => 3) }.should raise_error ExprArgException
+    lambda{ e.eval(:x => '2', :y => 3) }.should raise_error CascadingException
 
     # eval should not coerce floats to Java Longs
     e = ExprStub.new('x:long + y:int')
-    lambda{ e.eval(:x => 2.0, :y => 3) }.should raise_error ExprArgException
+    lambda{ e.eval(:x => 2.0, :y => 3) }.should raise_error CascadingException
 
     # eval should not coerce integers to Java Floats
     e = ExprStub.new('x:int + y:float')
-    lambda{ e.eval(:x => 2, :y => 3) }.should raise_error ExprArgException
+    lambda{ e.eval(:x => 2, :y => 3) }.should raise_error CascadingException
 
     e = ExprStub.new('x:float + y:int')
-    lambda{ e.eval(:x => 'blah', :y => 3) }.should raise_error ExprArgException
+    lambda{ e.eval(:x => 'blah', :y => 3) }.should raise_error CascadingException
 
     e = ExprStub.new('x:long + y:int')
-    lambda{ e.eval(:x => [], :y => 3) }.should raise_error ExprArgException
+    lambda{ e.eval(:x => [], :y => 3) }.should raise_error CascadingException
 
     e = ExprStub.new('x:long + y:int')
-    lambda{ e.eval(:x => nil, :y => 3) }.should raise_error ExprArgException
+    lambda{ e.eval(:x => nil, :y => 3) }.should raise_error CascadingException
   end
 
   it 'should throw an exception for missing actual arguments' do
@@ -129,6 +129,26 @@ describe ExprStub do
     e = ExprStub.new('x:bool && y:bool')
     result = e.test_evaluate
     result.should == false
+  end
+
+  it 'should only allow floating point division by zero' do
+    e = ExprStub.new('x:float / y:float')
+    result = e.test_evaluate
+    result.nan?.should == true
+
+    e = ExprStub.new('x:double / y:double')
+    result = e.test_evaluate
+    result.nan?.should == true
+
+    # From: http://download.oracle.com/javase/6/docs/api/java/lang/ArithmeticException.html
+    # Thrown when an exceptional arithmetic condition has occurred. For
+    # example, an integer "divide by zero" throws an instance of this class.
+
+    e = ExprStub.new('x:long / y:long')
+    lambda { result = e.test_evaluate }.should raise_error CascadingException
+
+    e = ExprStub.new('x:int / y:int')
+    lambda { result = e.test_evaluate }.should raise_error CascadingException
   end
 
   it 'should catch missing fields in filter expressions' do
