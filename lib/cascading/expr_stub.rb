@@ -99,32 +99,36 @@ class ExprStub
     [names.to_java(java.lang.String), types.to_java(java.lang.Class)]
   end
 
-  # Makes best effort to convert Ruby numbers into Floats or Longs for a Janino
-  # expression.  However, if the conversion fails, it returns the original
-  # value so that the exception thrown will be from Janino, not this code.
+  # Makes best effort to convert Ruby numbers into the Java numeric type
+  # exepcted by a Janino expression. However, if the conversion fails, it
+  # returns the original value so that the exception thrown will be from
+  # Janino, not this code.
   def specific_to_java(value, type)
     # GOTCHA: Java's Float and Long have constructors that take strings and
     # parse them.  If value is a string representation of a number, this code
     # could coerce it to a number whereas invocation of the Janino expression
     # would fail.  We therefore punt if value is a String.
     return value if value.kind_of?(::String)
-    case type
-      when java.lang.Float.java_class
-        return value if value.kind_of?(::Integer)
-        java.lang.Float.new(value) rescue value
-      when java.lang.Long.java_class
-        return value if value.kind_of?(::Float)
-        java.lang.Long.new(value) rescue value
-      else value
+    if type == java.lang.Float.java_class
+      return value if value.kind_of?(::Integer)
+      java.lang.Float.new(value) rescue value
+    elsif type == java.lang.Long.java_class && JRUBY_VERSION <= '1.2.0'
+      return value if value.kind_of?(::Float)
+      java.lang.Long.new(value) rescue value
+    elsif type == java.lang.Integer.java_class && JRUBY_VERSION > '1.2.0'
+      return value if value.kind_of?(::Float)
+      java.lang.Integer.new(value) rescue value
+    else
+      value
     end
   end
 
   @@defaults = {
-    java.lang.Integer.java_class => 0,
+    java.lang.Integer.java_class => JRUBY_VERSION > '1.2.0' ? java.lang.Integer.new(0) : 0,
     java.lang.Boolean.java_class => false,
     java.lang.Double.java_class => 0.0,
     java.lang.Float.java_class => java.lang.Float.new(0.0),
-    java.lang.Long.java_class => java.lang.Long.new(0),
+    java.lang.Long.java_class => JRUBY_VERSION > '1.2.0' ? 0 : java.lang.Long.new(0),
     java.lang.String.java_class => '',
   }
 
