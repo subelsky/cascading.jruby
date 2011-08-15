@@ -1,9 +1,8 @@
-# Wrapper meant for NativeExceptions that wrap exceptions from Cascading.  The
-# trouble is that the combined stack traces are so long, printing them case
-# actually omit locations in the cascading.jruby or application code that
-# matter, leaving you with no information about the source of the error.  This
-# class just swallows all the nested exceptions, printing their message, while
-# giving you a direct route into JRuby code to the cause of the problem.
+# NativeException wrapper that prints the full nested stack trace of the Java
+# exception and all of its causes wrapped by the NativeException.
+# NativeException by default reveals only the first cause, which is
+# insufficient for tracing cascading.jruby errors into JRuby code or revealing
+# underlying Janino expression problems.
 class CascadingException < StandardError
   def initialize(native_exception, message)
     @ne = native_exception
@@ -23,8 +22,12 @@ class CascadingException < StandardError
 
   def trace_causes(ne, depth)
     return unless ne
-    trace = "Cause #{depth}: #{ne}\n"
-    trace += ne.stack_trace.map { |e| "  at #{e.class_name}.#{e.method_name}(#{e.file_name}:#{e.line_number})" }.join("\n") + "\n" if ne.respond_to?(:stack_trace)
+    trace = "Cause #{depth}: #{ne.respond_to?(:java_class) ? ne.java_class : ne.class}: #{ne}\n"
+    if ne.respond_to?(:stack_trace)
+      trace += "#{ne.stack_trace.map{ |e| "  at #{e.class_name}.#{e.method_name}(#{e.file_name}:#{e.line_number})" }.join("\n")}\n"
+    elsif ne.respond_to?(:backtrace)
+      trace += "  #{ne.backtrace.join("\n  ")}\n"
+    end
     trace += "#{trace_causes(ne.cause, depth + 1)}"
   end
 end
