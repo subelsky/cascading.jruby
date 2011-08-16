@@ -10,7 +10,7 @@ cascade 'copy' do
 
     assembly 'input' do
       rename 'line' => 'value'
-      reject 'value:string.indexOf("R") == -1'
+      reject 'value == null || value:string.indexOf("R") == -1'
     end
 
     sink 'input', tap('output/copy', :sink_mode => :replace)

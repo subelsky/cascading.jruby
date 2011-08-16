@@ -110,10 +110,6 @@ end
     result = e.test_evaluate
     result.should == 0
 
-    e = ExprStub.new('x:int + y:string')
-    result = e.test_evaluate
-    result.should == '0'
-
     e = ExprStub.new('x:long + y:int')
     result = e.test_evaluate
     result.should == 0
@@ -129,6 +125,14 @@ end
     e = ExprStub.new('x:bool && y:bool')
     result = e.test_evaluate
     result.should == false
+
+    e = ExprStub.new('x:int + y:string')
+    result = e.test_evaluate
+    result.should == '0null'
+
+    e = ExprStub.new('x:string + y:string')
+    result = e.test_evaluate
+    result.should == 'nullnull'
   end
 
   it 'should only allow floating point division by zero' do

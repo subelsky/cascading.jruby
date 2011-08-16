@@ -124,7 +124,7 @@ module Cascading
       java.lang.Double.java_class => 0.0,
       java.lang.Float.java_class => java.lang.Float.new(0.0),
       java.lang.Long.java_class => JRUBY_VERSION > '1.2.0' ? 0 : java.lang.Long.new(0),
-      java.lang.String.java_class => '',
+      java.lang.String.java_class => nil,
     }
 
     def test_values
