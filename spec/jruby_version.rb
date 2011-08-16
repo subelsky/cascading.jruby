@@ -31,9 +31,9 @@ describe Object do
       result.should == 5
     end
 
-    it 'should handle Fixnum -> Long for ExprStub#test_evaluate' do
+    it 'should handle Fixnum -> Long for ExprStub#validate' do
       e = ExprStub.new('x:long + y:long')
-      result = e.test_evaluate
+      result = e.validate
       result.should == 0
     end
   when '1.4.0'
@@ -49,9 +49,9 @@ describe Object do
       result.should == 5
     end
 
-    it 'should handle Fixnum -> Integer for ExprStub#test_evaluate' do
+    it 'should handle Fixnum -> Integer for ExprStub#validate' do
       e = ExprStub.new('x:int + y:int')
-      result = e.test_evaluate
+      result = e.validate
       result.should == 0
     end
   when '1.5.3'
@@ -61,9 +61,9 @@ describe Object do
       result.should == 5
     end
 
-    it 'should handle Fixnum -> Integer for ExprStub#test_evaluate' do
+    it 'should handle Fixnum -> Integer for ExprStub#validate' do
       e = ExprStub.new('x:int + y:int')
-      result = e.test_evaluate
+      result = e.validate
       result.should == 0
     end
   else

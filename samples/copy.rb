@@ -10,7 +10,8 @@ cascade 'copy' do
 
     assembly 'input' do
       rename 'line' => 'value'
-      reject 'value == null || value:string.indexOf("R") == -1'
+      # We override validate_with because we know line will never be null
+      reject 'value:string.indexOf("R") == -1', :validate_with => { :value => 'nothinghere' }
     end
 
     sink 'input', tap('output/copy', :sink_mode => :replace)

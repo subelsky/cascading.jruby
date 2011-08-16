@@ -16,7 +16,7 @@ describe ExprStub do
   it 'should throw an exception for parsing failures' do
     e = ExprStub.new('x:int + doesnotparse y:string')
     lambda{ e.compile }.should raise_error CascadingException
-end
+  end
 
   it 'should throw an exception for compile failures' do
     e = ExprStub.new('new DoesNotExist(x:int).doesnotcompile()')
@@ -105,43 +105,99 @@ end
     result.should == 5
   end
 
-  it 'should use default actual arguments to test evaluation' do
+  it 'should use default actual arguments to validate' do
     e = ExprStub.new('x:int + y:int')
-    result = e.test_evaluate
+    result = e.validate
     result.should == 0
 
     e = ExprStub.new('x:long + y:int')
-    result = e.test_evaluate
+    result = e.validate
     result.should == 0
 
     e = ExprStub.new('x:double + y:int')
-    result = e.test_evaluate
+    result = e.validate
     result.should == 0.0
 
     e = ExprStub.new('x:float + y:int')
-    result = e.test_evaluate
+    result = e.validate
     result.should == 0.0
 
     e = ExprStub.new('x:bool && y:bool')
-    result = e.test_evaluate
+    result = e.validate
     result.should == false
 
     e = ExprStub.new('x:int + y:string')
-    result = e.test_evaluate
+    result = e.validate
     result.should == '0null'
 
     e = ExprStub.new('x:string + y:string')
-    result = e.test_evaluate
+    result = e.validate
     result.should == 'nullnull'
+  end
+
+  it 'should fail to validate these expressions with default actual arguments' do
+    e = ExprStub.new('x:string.indexOf("R") == -1')
+    lambda { e.validate }.should raise_error CascadingException
+
+    e = ExprStub.new('x:string.substring(0, 8)')
+    lambda { e.validate }.should raise_error CascadingException
+  end
+
+  it 'should allow overriding default actual arguments for validation' do
+    e = ExprStub.new('x:string.indexOf("R") == -1')
+    result = e.validate(:x => 'nothinghere')
+    result.should == true
+
+    e = ExprStub.new('x:string.substring(0, 8)')
+    result = e.validate(:x => 'atleast8chars')
+    result.should == 'atleast8'
+  end
+
+  it 'should allow overriding default actual arguments for validation via expr' do
+    expr('x:string.indexOf("R") == -1', :validate_with => { :x => 'nothinghere' })
+    expr('x:string.substring(0, 8)', :validate_with => { :x => 'atleast8chars' })
+  end
+
+  it 'should allow overriding default actual arguments for validation via filter' do
+    test_assembly do
+      filter :expression => 'line:string.indexOf("R") == -1', :validate_with => { :line => 'nothinghere' }
+      check_scope :values_fields => ['offset', 'line']
+    end
+  end
+
+  it 'should allow overriding default actual arguments for validation via where' do
+    test_assembly do
+      where 'line:string.equals("not_set") && "0".equals(offset:string)', :validate_with => { :line => 'nulls_rejected' }
+      check_scope :values_fields => ['offset', 'line']
+    end
+  end
+
+  it 'should allow disabling validation via expr' do
+    expr('x:string.indexOf("R") == -1', :validate => false)
+    expr('x:string.substring(0, 8)', :validate => false)
+  end
+
+  it 'should allow disabling validation via filter' do
+    test_assembly do
+      filter :expression => 'line:string.indexOf("R") == -1', :validate => false
+      check_scope :values_fields => ['offset', 'line']
+    end
+  end
+
+  it 'should allow disabling validation via where' do
+    test_assembly do
+      where 'line:string.indexOf("R") == -1', :validate => false
+      check_scope :values_fields => ['offset', 'line']
+    end
   end
 
   it 'should only allow floating point division by zero' do
     e = ExprStub.new('x:float / y:float')
-    result = e.test_evaluate
+    result = e.validate
     result.nan?.should == true
 
     e = ExprStub.new('x:double / y:double')
-    result = e.test_evaluate
+    result = e.validate
     result.nan?.should == true
 
     # From: http://download.oracle.com/javase/6/docs/api/java/lang/ArithmeticException.html
@@ -149,16 +205,17 @@ end
     # example, an integer "divide by zero" throws an instance of this class.
 
     e = ExprStub.new('x:long / y:long')
-    lambda { result = e.test_evaluate }.should raise_error CascadingException
+    lambda { e.validate }.should raise_error CascadingException
 
     e = ExprStub.new('x:int / y:int')
-    lambda { result = e.test_evaluate }.should raise_error CascadingException
+    lambda { e.validate }.should raise_error CascadingException
   end
 
   it 'should catch missing fields in filter expressions' do
     lambda do
       test_assembly do
         filter :expression => 'doesnotexist:int > offset:int'
+      check_scope :values_fields => ['offset', 'line', 'bar', 'foo']
       end
     end.should raise_error ExprArgException
   end

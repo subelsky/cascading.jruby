@@ -611,13 +611,20 @@ module Cascading
     # * <tt>:expression</tt> a string. Specifies a Janino expression used to filter the tuples. This option has the
     # same effect than providing it as first unamed argument. If this option is provided, then the filter is Janino
     # expression-based. This is incompatible with the _pattern_ option.
+    # * <tt>:validate</tt> a boolean.  Passed into Cascading#expr to enable or disable
+    # expression validation.  Defaults to true.
+    # * <tt>:validate_with</tt> a hash.  Actual arguments used by Cascading#expr for
+    # expression validation.  Defaults to {}.
     def filter(*args)
       options = args.extract_options!
       from = options.delete(:from) || all_fields
       expression = options.delete(:expression) || args.shift
       regex = options.delete(:pattern)
+      validate = options.has_key?(:validate) ? options.delete(:validate) : true
+      validate_with = options.has_key?(:validate_with) ? options.delete(:validate_with) : {}
+
       if expression
-        stub = expr(expression)
+        stub = expr(expression, { :validate => validate, :validate_with => validate_with })
         types, expression = stub.types, stub.expression
 
         stub.validate_scope(scope)
@@ -650,6 +657,10 @@ module Cascading
     # * <tt>:expression</tt> a string. Specifies a Janino expression used to filter the tuples. This option has the
     # same effect than providing it as first unamed argument. If this option is provided, then the filter is Janino
     # expression-based.
+    # * <tt>:validate</tt> a boolean.  Passed into Cascading#expr to enable or disable
+    # expression validation.  Defaults to true.
+    # * <tt>:validate_with</tt> a hash.  Actual arguments used by Cascading#expr for
+    # expression validation.  Defaults to {}.
     def reject(*args)
       options = args.extract_options
       raise "Regex not allowed" if options && options[:pattern]
@@ -665,6 +676,10 @@ module Cascading
     # * <tt>:expression</tt> a string. Specifies a Janino expression used to select the tuples. This option has the
     # same effect than providing it as first unamed argument. If this option is provided, then the filter is Janino
     # expression-based.
+    # * <tt>:validate</tt> a boolean.  Passed into Cascading#expr to enable or disable
+    # expression validation.  Defaults to true.
+    # * <tt>:validate_with</tt> a hash.  Actual arguments used by Cascading#expr for
+    # expression validation.  Defaults to {}.
     def where(*args)
       options = args.extract_options
       raise "Regex not allowed" if options && options[:pattern]

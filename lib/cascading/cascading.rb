@@ -25,11 +25,19 @@ module Cascading
     flow
   end
 
-  def expr(s)
-    return s if s.kind_of?(ExprStub)
-    e = ExprStub.new(s).compile
-    e.test_evaluate
-    e
+  # Convenience constructor for an ExprStub.  Takes a string to use as a Janino
+  # expression and an optional params hash.  By default, the param :validate is
+  # set to true (performs expression validation using default actual argument
+  # values) and the param :validate_with is set to {} (which doesn't override
+  # any of the default actual argument values).
+  def expr(expression, params = {})
+    params = { :validate => true, :validate_with => {} }.merge(params)
+    return expression if expression.kind_of?(ExprStub)
+
+    expr_stub = ExprStub.new(expression).compile
+    expr_stub.validate(params[:validate_with]) if params[:validate]
+    puts "Expression validation is disabled for '#{expression}'" unless params[:validate]
+    expr_stub
   end
 
   # Creates a cascading.tuple.Fields instance from a string or an array of strings.
