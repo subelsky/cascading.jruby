@@ -1,9 +1,13 @@
 module Cascading
   class ExprStub
-    attr_accessor :expression, :types
+    attr_accessor :expression, :types, :input_expression
 
-    def initialize(st)
-      @expression = st.dup
+    # ExprStub requires a Janino expression decorated with field types.  For
+    # example: '"Found: " + (x:int + y:int) + " " + z:string'.  Type names are
+    # defined in Cascading::JAVA_TYPE_MAP.
+    def initialize(expression)
+      @input_expression = expression
+      @expression = expression.dup
       @types = {}
 
       # Simple regexp based parser for types
@@ -15,6 +19,24 @@ module Cascading
           match.gsub(/:#{sym.to_s}/, "")
         end
       end
+    end
+
+    def to_s
+      @input_expression
+    end
+
+    # Convenience constructor for an ExprStub that optionally performs
+    # validation.  Takes a string to use as a Janino expression and an optional
+    # params hash.  By default, the param :validate is set to true (performs
+    # expression validation using default actual argument values) and the param
+    # :validate_with is set to {} (which doesn't override any of the default
+    # actual argument values used for validation).
+    def self.expr(expression, params = {})
+      params = { :validate => true, :validate_with => {} }.merge(params)
+      expr_stub = expression.kind_of?(ExprStub) ? expression : ExprStub.new(expression).compile
+      expr_stub.validate(params[:validate_with]) if params[:validate]
+      puts "Expression validation is disabled for '#{expression}'" unless params[:validate]
+      expr_stub
     end
 
     # Scan, parse, and compile expression, then return this ExprStub upon
