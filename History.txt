@@ -1,0 +1,17 @@
+0.0.5 - Addressing Janino pain
+
+This release expands upon the ExprStub class adding composition time compilation
+and validation of Janino expressions.  This causes faulty Janino expressions to
+fail early rather than hours into a job.
+
+0.0.4 - Cleanup
+
+This release merges in a good deal of work from Etsy and addresses many internal
+structural issues with cascading.jruby node hierarchies.  Greatly expands unit
+tests and makes samples easily executable as a form of functional testing.
+
+0.0.3 - Etsy's first version of cascading.jruby
+
+First major commit of work from Etsy that introduces scope propagation to
+cascading.jruby scripts in support of field propagation and primary keys.
+Mainly a cleanup and testing release.
