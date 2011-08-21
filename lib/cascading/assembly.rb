@@ -281,9 +281,7 @@ module Cascading
     # Example:
     #     project "field1", "field2"
     def project(*args)
-      fields = fields(args)
-      operation = Java::CascadingOperation::Identity.new
-      make_each(Java::CascadingPipe::Each, @tail_pipe, fields, operation)
+      each fields(args), :function => Java::CascadingOperation::Identity.new
     end
 
     # Removes the specified fields from the current assembly.
@@ -301,9 +299,7 @@ module Cascading
     # Example:
     #     bind_names "field1", "field2"
     def bind_names(*new_names)
-      new_fields = fields(new_names)
-      operation = Java::CascadingOperation::Identity.new(new_fields)
-      make_each(Java::CascadingPipe::Each, @tail_pipe, all_fields, operation)
+      each all_fields, :function => Java::CascadingOperation::Identity.new(fields(new_names))
     end
 
     # Renames fields according to the mapping provided.
@@ -319,9 +315,7 @@ module Cascading
       old_key = scope.primary_key_fields.to_a
       new_key = old_key.map{ |name| name_map[name] || name }
 
-      new_fields = fields(new_names)
-      operation = Java::CascadingOperation::Identity.new(new_fields)
-      make_each(Java::CascadingPipe::Each, @tail_pipe, all_fields, operation)
+      each all_fields, :function => Java::CascadingOperation::Identity.new(fields(new_names))
       primary(*new_key)
     end
 
@@ -330,22 +324,19 @@ module Cascading
       types = JAVA_TYPE_MAP.values_at(*type_map.values_at(*names))
       fields = fields(names)
       types = types.to_java(java.lang.Class)
-      operation = Java::CascadingOperation::Identity.new(fields, types)
-      make_each(Java::CascadingPipe::Each, @tail_pipe, fields, operation)
+      each fields, :function => Java::CascadingOperation::Identity.new(fields, types)
     end
 
     def copy(*args)
       options = args.extract_options!
       from = args[0] || all_fields
       into = args[1] || options[:into] || all_fields
-      operation = Java::CascadingOperation::Identity.new(fields(into))
-      make_each(Java::CascadingPipe::Each, @tail_pipe, fields(from), operation, Java::CascadingTuple::Fields::ALL)
+      each fields(from), :function => Java::CascadingOperation::Identity.new(fields(into)), :output => all_fields
     end
 
     # A pipe that does nothing.
     def pass(*args)
-      operation = Java::CascadingOperation::Identity.new
-      make_each(Java::CascadingPipe::Each, @tail_pipe, all_fields, operation)
+      each all_fields, :function => Java::CascadingOperation::Identity.new
     end
 
     def assert(*args)
