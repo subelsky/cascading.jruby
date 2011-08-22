@@ -1,6 +1,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-describe Cascading::Scope do
+context Cascading::Scope do
   it 'should allow override of primary key' do
     test_assembly do
       split 'line', ['x', 'y'], :pattern => /,/

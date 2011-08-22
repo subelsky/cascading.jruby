@@ -25,6 +25,11 @@ module Cascading
     flow
   end
 
+  def describe
+    Cascade.all.map{ |cascade| cascade.describe }.join("\n")
+  end
+  alias desc describe
+
   # See ExprStub.expr
   def expr(expression, params = {})
     ExprStub.expr(expression, params)

@@ -1,6 +1,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-describe Object do
+context Object do
   it 'should definitely not do this' do
     names = ['x', 'y'].to_java(java.lang.String)
     types = [java.lang.Integer.java_class, java.lang.Integer.java_class].to_java(java.lang.Class)

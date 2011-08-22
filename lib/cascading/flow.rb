@@ -8,10 +8,10 @@ module Cascading
   class Flow < Cascading::Node
     extend Registerable
 
-    attr_accessor :properties, :sources, :sinks, :outgoing_scopes, :listeners
+    attr_accessor :properties, :sources, :sinks, :incoming_scopes, :outgoing_scopes, :listeners
 
     def initialize(name, parent)
-      @properties, @sources, @sinks, @outgoing_scopes, @listeners = {}, {}, {}, {}, []
+      @properties, @sources, @sinks, @incoming_scopes, @outgoing_scopes, @listeners = {}, {}, {}, {}, {}, []
       super(name, parent)
       self.class.add(name, self)
     end
@@ -29,9 +29,9 @@ module Cascading
     # reference a path.
     def sink(*args)
       if (args.size == 2)
-        @sinks[args[0]] = args[1]
+        sinks[args[0]] = args[1]
       elsif (args.size == 1)
-        @sinks[@name] =  args[0]
+        sinks[name] =  args[0]
       end
     end
 
@@ -40,12 +40,22 @@ module Cascading
     # reference a path.
     def source(*args)
       if (args.size == 2)
-        @sources[args[0]] = args[1]
-        @outgoing_scopes[args[0]] = Scope.tap_scope(args[1], args[0])
+        sources[args[0]] = args[1]
+        incoming_scopes[args[0]] = Scope.tap_scope(args[1], args[0])
+        outgoing_scopes[args[0]] = incoming_scopes[args[0]]
       elsif (args.size == 1)
-        @sources[@name] = args[0]
-        @outgoing_scopes[@name] = Scope.empty_scope(@name)
+        sources[name] = args[0]
+        incoming_scopes[name] = Scope.empty_scope(name)
+        outgoing_scopes[name] = incoming_scopes[name]
       end
+    end
+
+    def describe(offset = '')
+      description =  "#{offset}#{name}:flow\n"
+      description += "#{sources.keys.map{ |source| "#{offset}  #{source}:source :: #{incoming_scopes[source].values_fields.to_a.inspect}" }.join("\n")}\n"
+      description += "#{child_names.map{ |child| children[child].describe("#{offset}  ") }.join("\n")}\n"
+      description += "#{sinks.keys.map{ |sink| "#{offset}  #{sink}:sink :: #{outgoing_scopes[sink].values_fields.to_a.inspect}" }.join("\n")}"
+      description
     end
 
     def scope(name = nil)

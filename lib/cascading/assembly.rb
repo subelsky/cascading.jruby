@@ -10,7 +10,7 @@ module Cascading
   class Assembly < Cascading::Node
     include Operations
 
-    attr_accessor :tail_pipe, :head_pipe, :outgoing_scopes
+    attr_accessor :head_pipe, :tail_pipe, :incoming_scopes, :outgoing_scopes
 
     def initialize(name, parent, outgoing_scopes = {})
       super(name, parent)
@@ -27,6 +27,15 @@ module Cascading
         @outgoing_scopes[name] ||= Scope.empty_scope(name)
       end
       @tail_pipe = @head_pipe
+      @incoming_scopes = [scope]
+    end
+
+    def describe(offset = '')
+      incoming_scopes_desc = "#{incoming_scopes.map{ |incoming_scope| incoming_scope.values_fields.to_a.inspect }.join(', ')}"
+      incoming_scopes_desc = "(#{incoming_scopes_desc})" unless incoming_scopes.size == 1
+      description =  "#{offset}#{name}:assembly :: #{incoming_scopes_desc} -> #{scope.values_fields.to_a.inspect}"
+      description += "\n#{child_names.map{ |child| children[child].describe("#{offset}  ") }.join("\n")}" unless children.empty?
+      description
     end
 
     def parent_flow
@@ -90,7 +99,7 @@ module Cascading
       first_fields = first_fields - scope.grouping_fields.to_a
       if first_fields.size > 0
         first *first_fields
-        puts "Firsting: #{first_fields.inspect} in assembly: #{@name}"
+        puts "Firsting: #{first_fields.inspect} in assembly: #{name}"
       end
 
       bind_names scope.grouping_fields.to_a if every_applied?
@@ -102,14 +111,14 @@ module Cascading
     end
 
     def to_s
-      "#{@name} : head pipe : #{@head_pipe} - tail pipe: #{@tail_pipe}"
+      "#{name} : head pipe : #{@head_pipe} - tail pipe: #{@tail_pipe}"
     end
 
     # Builds a join (CoGroup) pipe. Requires a list of assembly names to join.
     def join(*args, &block)
       options = args.extract_options!
 
-      pipes, incoming_scopes = [], []
+      pipes, @incoming_scopes = [], []
       args.each do |assembly_name|
         assembly = parent_flow.find_child(assembly_name)
         raise "Could not find assembly '#{assembly_name}' in join" unless assembly
@@ -129,7 +138,7 @@ module Cascading
           group_fields << fields(group_fields_args)
         end
       elsif group_fields_args.kind_of?(Hash)
-        pipes, incoming_scopes = [], []
+        pipes, @incoming_scopes = [], []
         keys = group_fields_args.keys.sort
         keys.each do |assembly_name|
           v = group_fields_args[assembly_name]
@@ -233,7 +242,7 @@ module Cascading
     # This actually creates a GroupBy pipe.
     # It expects a list of assembly names as parameter.
     def union_pipes(*args)
-      pipes, incoming_scopes = [], []
+      pipes, @incoming_scopes = [], []
       args[0].each do |assembly_name|
         assembly = parent_flow.find_child(assembly_name)
         pipes << assembly.tail_pipe

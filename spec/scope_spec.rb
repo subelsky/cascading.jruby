@@ -1,6 +1,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-describe Cascading::Scope do
+context Cascading::Scope do
   it 'should match Cascading fields names from source tap scheme' do
     test_assembly do
       # Pass that uses our scope instead of all_fields

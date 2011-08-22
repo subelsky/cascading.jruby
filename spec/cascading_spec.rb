@@ -1,6 +1,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-describe Cascading do
+context Cascading do
   it 'should handle string and integer field names' do
     f = fields(['a', 1, 'b', 2])
     f.to_a.should == ['a', 1, 'b', 2]

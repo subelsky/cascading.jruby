@@ -22,6 +22,10 @@ module Cascading
       flow
     end
 
+    def describe(offset = '')
+      "#{offset}#{name}:cascade\n#{child_names.map{ |child| children[child].describe("#{offset}  ") }.join("\n")}"
+    end
+
     def draw(dir, properties = nil)
       @children.each do |name, flow|
         flow.connect(properties).writeDOT("#{dir}/#{name}.dot")

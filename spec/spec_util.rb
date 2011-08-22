@@ -171,7 +171,7 @@ def verify_assembly_output(assembly_name, params, &block)
 end
 
 def describe_job(job_file, &block)
-  describe Object do
+  context Object do
     before(:each) do
       @properties = cascading_properties
       # Must artificially fill ARGV to prevent errors when creating multi-taps
