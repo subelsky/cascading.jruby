@@ -4,7 +4,7 @@ Some hacking info on `cascading.jruby`:
 
 `cascading.jruby` can be packaged as a gem. To do so, you must generate the necessary packaging files:
 
-    ant build; jruby -S rake gem
+    jruby -S rake gem
 
 will produce the gem in the pkg/ sub-directory. After that, just cd to this directory and:
 
