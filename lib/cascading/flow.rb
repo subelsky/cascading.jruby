@@ -135,7 +135,16 @@ module Cascading
     end
 
     def connect(properties = nil)
-      properties = java.util.HashMap.new(properties || @properties)
+      # This ensures we have a hash, and that it is a Ruby Hash (because we
+      # also accept java.util.HashMap), then merges it with Flow properties
+      properties ||= {}
+      properties = java.util.HashMap.new(@properties.merge(Hash[*properties.to_a.flatten]))
+
+      puts "Connecting flow '#{name}' with properties:"
+      properties.keys.sort.each do |key|
+        puts "#{key}=#{properties[key]}"
+      end
+
       Java::CascadingFlow::FlowConnector.new(properties).connect(
         name,
         make_tap_parameter(@sources),
