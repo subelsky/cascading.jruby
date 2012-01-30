@@ -141,7 +141,7 @@ module Cascading
       properties = java.util.HashMap.new(@properties.merge(Hash[*properties.to_a.flatten]))
 
       puts "Connecting flow '#{name}' with properties:"
-      properties.keys.sort.each do |key|
+      properties.key_set.to_a.sort.each do |key|
         puts "#{key}=#{properties[key]}"
       end
 
