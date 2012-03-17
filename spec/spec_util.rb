@@ -7,22 +7,12 @@ module ScopeTests
     scope = scope(*name_params)
     values_fields = params[:values_fields]
     grouping_fields = params[:grouping_fields] || values_fields
-    primary_key_fields = params[:primary_key_fields]
-    grouping_primary_key_fields = primary_key_fields
-    grouping_primary_key_fields = params[:grouping_primary_key_fields] if params.has_key?(:grouping_primary_key_fields)
 
     debug = params[:debug]
     debug_scope(*name_params) if debug
 
     scope.values_fields.to_a.should == values_fields
     scope.grouping_fields.to_a.should == grouping_fields
-    if params.has_key?(:primary_key_fields) # Must support nil values
-      scope.primary_key_fields.should == nil if primary_key_fields.nil?
-      scope.primary_key_fields.to_a.should == primary_key_fields unless primary_key_fields.nil?
-
-      scope.grouping_primary_key_fields.should == nil if grouping_primary_key_fields.nil?
-      scope.grouping_primary_key_fields.to_a.should == grouping_primary_key_fields unless grouping_primary_key_fields.nil?
-    end
   end
 end
 

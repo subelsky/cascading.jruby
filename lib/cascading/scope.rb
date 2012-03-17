@@ -1,25 +1,14 @@
 module Cascading
   class Scope
-    attr_accessor :scope, :grouping_key_fields, :primary_key_fields, :grouping_primary_key_fields
-    @@scheme_keys = {}
+    attr_accessor :scope, :grouping_key_fields
 
     def initialize(scope, params = {})
       @scope = scope
       @grouping_key_fields = fields(params[:grouping_key_fields] || [])
-      @primary_key_fields = fields(params[:primary_key_fields])
-      @grouping_primary_key_fields = fields(params[:grouping_primary_key_fields])
     end
 
     def copy
-      Scope.new(Java::CascadingFlow::Scope.new(@scope),
-          :grouping_key_fields => @grouping_key_fields,
-          :primary_key_fields => @primary_key_fields,
-          :grouping_primary_key_fields => @grouping_primary_key_fields
-      )
-    end
-
-    def self.register_scheme_key(scheme, primary_key)
-      @@scheme_keys[scheme] = primary_key
+      Scope.new(Java::CascadingFlow::Scope.new(@scope), :grouping_key_fields => @grouping_key_fields)
     end
 
     def self.empty_scope(name)
@@ -30,26 +19,14 @@ module Cascading
       java_scope = outgoing_scope_for(tap, java.util.HashSet.new)
       # Taps and Pipes don't name their outgoing scopes like other FlowElements
       java_scope.name = name
-      scope = Scope.new(java_scope,
-          :primary_key_fields => @@scheme_keys[tap.scheme.class],
-          :grouping_primary_key_fields => @@scheme_keys[tap.scheme.class]
-      )
-      vf, gf = scope.values_fields.to_a, scope.grouping_fields.to_a
-      pk, gpk = scope.primary_key_fields.to_a, scope.grouping_primary_key_fields.to_a
-      raise "Primary key must be a subset of available fields (primary key: #{pk.inspect}, values fields: #{vf.inspect})" unless vf & pk == pk
-      raise "Grouping primary key must be a subset of available fields (grouping primary key: #{gpk.inspect}, grouping fields: #{gf.inspect})" unless gf & gpk == gpk
-      scope
+      Scope.new(java_scope)
     end
 
     def self.outgoing_scope(flow_element, incoming_scopes, grouping_key_fields, every_applied)
       java_scopes = incoming_scopes.compact.map{ |s| s.scope }
-      scope = Scope.new(outgoing_scope_for(flow_element, java.util.HashSet.new(java_scopes)),
+      Scope.new(outgoing_scope_for(flow_element, java.util.HashSet.new(java_scopes)),
           :grouping_key_fields => grouping_key_fields
       )
-      scope.grouping_primary_key_fields = fields(grouping_primary_key_fields(flow_element, incoming_scopes, scope))
-      scope.primary_key_fields = scope.grouping_primary_key_fields if every_applied
-      scope.primary_key_fields = fields(primary_key_fields(flow_element, incoming_scopes, scope)) unless every_applied
-      scope
     end
 
     def values_fields
@@ -80,11 +57,9 @@ Scope name: #{@scope.name}
     selector: #{@scope.out_grouping_selector}
     fields: #{grouping_fields}
     key fields: #{@grouping_key_fields}
-    primary key fields: #{@grouping_primary_key_fields}
   Out values
     selector: #{@scope.out_values_selector}
     fields: #{values_fields}
-    primary key fields: #{@primary_key_fields}
 END
     end
 
@@ -97,64 +72,5 @@ END
         raise CascadingException.new(e, 'Exception computing outgoing scope')
       end
     end
-
-    def self.primary_key_fields(flow_element, incoming_scopes, scope)
-      case flow_element
-        when Java::CascadingPipe::Each
-          # assert incoming_scopes.size == 1
-          project_primary_key(incoming_scopes.first.primary_key_fields,
-                              incoming_scopes.first.values_fields.to_a,
-                              scope.values_fields.to_a)
-        when Java::CascadingPipe::Every
-          # assert incoming_scopes.size == 1
-          incoming_scopes.first.primary_key_fields
-        when Java::CascadingPipe::GroupBy
-          if incoming_scopes.size == 1
-            incoming_scopes.first.primary_key_fields
-          else
-            # We must clear the primary key when unioning multiple inputs.  If
-            # the programmer wants to preserve the primary key, they must use
-            # the primary override.
-            nil
-          end
-        when Java::CascadingPipe::CoGroup
-          # FIXME: assume grouping_key_fields are the same for all
-          # incoming_scopes.  Need join to give me names from all incoming
-          # scopes to perform rename on primary key fields.
-          union_fields(*incoming_scopes.map{ |s| s.primary_key_fields })
-        else raise "No primary key rules for FlowElement of type #{flow_element}"
-      end
-    end
-
-    def self.project_primary_key(primary_key, old_fields, new_fields)
-      return nil if primary_key.nil?
-      primary_key = primary_key.to_a
-      primary_key if (primary_key & new_fields) == primary_key
-    end
-
-    def self.grouping_primary_key_fields(flow_element, incoming_scopes, scope)
-      case flow_element
-        when Java::CascadingPipe::Each
-          # assert incoming_scopes.size == 1
-          project_primary_key(incoming_scopes.first.grouping_primary_key_fields,
-                              incoming_scopes.first.grouping_fields.to_a,
-                              scope.grouping_fields.to_a)
-        when Java::CascadingPipe::Every
-          # assert incoming_scopes.size == 1
-          incoming_scopes.first.grouping_primary_key_fields
-        when Java::CascadingPipe::GroupBy
-          scope.grouping_key_fields
-        when Java::CascadingPipe::CoGroup
-          scope.grouping_key_fields
-        else raise "No primary key rules for FlowElement of type #{flow_element}"
-      end
-    end
-  end
-
-  # Register default primary keys
-  begin
-    Scope.register_scheme_key(Java::CascadingScheme::TextLine, ['offset'])
-  rescue NameError => ne
-    puts 'WARNING: Could not register primary key for TextLine Scheme as it was not on the class path'
   end
 end

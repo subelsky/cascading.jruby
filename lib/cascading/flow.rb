@@ -75,7 +75,6 @@ module Cascading
         raise "Cannot sink undefined assembly '#{sink_name}'" unless @outgoing_scopes[sink_name]
         sink_metadata[sink_name] = {
           :field_names => @outgoing_scopes[sink_name].values_fields.to_a,
-          :primary_key => @outgoing_scopes[sink_name].primary_key_fields.to_a
         }
         sink_metadata
       end

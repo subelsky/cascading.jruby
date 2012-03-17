@@ -51,16 +51,6 @@ module Cascading
       puts "Current scope for '#{name}':\n  #{scope}\n----------\n"
     end
 
-    def primary(*args)
-      options = args.extract_options!
-      if args.size > 0 && args[0] != nil
-        scope.primary_key_fields = fields(args)
-      else
-        scope.primary_key_fields = nil
-      end
-      scope.grouping_primary_key_fields = scope.primary_key_fields
-    end
-
     def make_each(type, *parameters)
       make_pipe(type, parameters)
       @every_applied = false
@@ -81,26 +71,6 @@ module Cascading
       # TODO: this should really be instance evaled on an object
       # that only allows aggregation and buffer operations.
       instance_eval &block
-
-      # First all non-primary key fields from each pipe if its primary key is a
-      # subset of the grouping primary key
-      first_fields = incoming_scopes.map do |scope|
-        if scope.primary_key_fields
-          primary_key = scope.primary_key_fields.to_a
-          grouping_primary_key = scope.grouping_primary_key_fields.to_a
-          if (primary_key & grouping_primary_key) == primary_key
-            difference_fields(scope.values_fields, scope.primary_key_fields).to_a
-          end
-        end
-      end.compact.flatten
-      # assert first_fields == first_fields.uniq
-
-      # Do no first any fields explicitly aggregated over
-      first_fields = first_fields - scope.grouping_fields.to_a
-      if first_fields.size > 0
-        first *first_fields
-        puts "Firsting: #{first_fields.inspect} in assembly: #{name}"
-      end
 
       bind_names scope.grouping_fields.to_a if every_applied?
     end
@@ -321,11 +291,7 @@ module Cascading
       invalid = name_map.keys.sort - old_names
       raise "invalid names: #{invalid.inspect}" unless invalid.empty?
 
-      old_key = scope.primary_key_fields.to_a
-      new_key = old_key.map{ |name| name_map[name] || name }
-
       each all_fields, :function => Java::CascadingOperation::Identity.new(fields(new_names))
-      primary(*new_key)
     end
 
     def cast(type_map)
