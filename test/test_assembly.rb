@@ -248,6 +248,44 @@ class TC_Assembly < Test::Unit::TestCase
     end
   end
 
+  def test_empty_where
+    assembly = mock_assembly do
+      split 'line', ['name', 'score1', 'score2', 'id'], :pattern => /[.,]*\s+/, :output => ['name', 'score1', 'score2', 'id']
+      where
+    end
+    assert assembly.tail_pipe.is_a? Java::CascadingPipe::Each
+
+    # Empty where compiles away
+    assert assembly.tail_pipe.operation.is_a? Java::CascadingOperationRegex::RegexSplitter
+  end
+
+  def test_where
+    assembly = mock_assembly do
+      split 'line', ['name', 'score1', 'score2', 'id'], :pattern => /[.,]*\s+/, :output => ['name', 'score1', 'score2', 'id']
+      where 'score1:double < score2:double'
+    end
+    assert assembly.tail_pipe.is_a? Java::CascadingPipe::Each
+    assert assembly.tail_pipe.operation.is_a? Java::CascadingOperationExpression::ExpressionFilter
+  end
+
+  def test_where_with_expression
+    assembly = mock_assembly do
+      split 'line', ['name', 'score1', 'score2', 'id'], :pattern => /[.,]*\s+/, :output => ['name', 'score1', 'score2', 'id']
+      where :expression => 'score1:double < score2:double'
+    end
+    assert assembly.tail_pipe.is_a? Java::CascadingPipe::Each
+    assert assembly.tail_pipe.operation.is_a? Java::CascadingOperationExpression::ExpressionFilter
+  end
+
+  def test_where_with_import
+    assembly = mock_assembly do
+      split 'line', ['name', 'score1', 'score2', 'id'], :pattern => /[.,]*\s+/, :output => ['name', 'score1', 'score2', 'id']
+      names = ['SMITH', 'JONES', 'BROWN']
+      where "import java.util.Arrays;\nArrays.asList(new String[] { \"#{names.join('", "')}\" }).contains(name:string)"
+    end
+    assert assembly.tail_pipe.is_a? Java::CascadingPipe::Each
+    assert assembly.tail_pipe.operation.is_a? Java::CascadingOperationExpression::ExpressionFilter
+  end
 end
 
 

@@ -652,9 +652,11 @@ module Cascading
       raise "Regex not allowed" if options && options[:pattern]
 
       if options[:expression]
-        options[:expression] = "!(#{options[:expression]})"
+        _, imports, expr = options[:expression].match(/^((?:\s*import.*;\s*)*)(.*)$/).to_a
+        options[:expression] = "#{imports}!(#{expr})"
       elsif args[0]
-        args[0] = "!(#{args[0]})"
+        _, imports, expr = args[0].match(/^((?:\s*import.*;\s*)*)(.*)$/).to_a
+        args[0] = "#{imports}!(#{expr})"
       end
 
       filter(*args)
