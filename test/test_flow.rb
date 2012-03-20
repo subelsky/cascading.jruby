@@ -11,5 +11,72 @@ class TC_Flow < Test::Unit::TestCase
     assert_equal 1, flow.children.size
     assert_equal flow.children["Test1"], flow.find_child("Test1")
     assert_equal flow.last_child, flow.find_child("Test1")
+
+    assert_equal flow, flow.root
+    assert_equal flow, flow.last_child.root
+
+    assert_equal 'My Flow1', flow.qualified_name
+    assert_equal 'My Flow1.Test1', flow.last_child.qualified_name
+  end
+
+  def test_ambiguous_assembly_names
+    flow = flow 'flow' do
+      source 'a', tap('test/data/data1.txt')
+
+      $a1 = assembly 'a' do
+        pass
+      end
+
+      $a2 = assembly 'a' do
+        pass
+      end
+
+      $x = assembly 'x' do
+        union 'a'
+      end
+    end
+
+    # FIXME: 'a' assemblies and qualified names collide
+    assert_equal 2, flow.children.size
+    assert_equal 'flow.a', $a1.qualified_name
+    assert_equal 'flow.a', $a2.qualified_name
+
+    # FIXME: assembly defined last wins
+    assert_equal $a2, flow.find_child('a')
+
+    assert_equal 1, $x.tail_pipe.heads.size
+    assert_equal $a2.head_pipe, $x.tail_pipe.heads.first
+  end
+
+  def test_ambiguous_branch_names
+    flow = flow 'flow' do
+      source 'a', tap('test/data/data1.txt')
+      source 'b', tap('test/data/data1.txt')
+
+      assembly 'a' do
+        $b1 = branch 'b' do
+          pass
+        end
+      end
+
+      $b2 = assembly 'b' do
+        pass
+      end
+
+      $x = assembly 'x' do
+        union 'b'
+      end
+    end
+
+    # FIXME: 'b' assemblies collide even though qualified names don't
+    assert_equal 3, flow.children.size
+    assert_equal 'flow.a.b', $b1.qualified_name
+    assert_equal 'flow.b', $b2.qualified_name
+
+    # FIXME: branch hit by depth-first serach first
+    assert_equal $b1, flow.find_child('b')
+
+    assert_equal 1, $x.tail_pipe.heads.size
+    assert_equal $b1.parent.head_pipe, $x.tail_pipe.heads.first
   end
 end

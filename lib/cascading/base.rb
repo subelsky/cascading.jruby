@@ -15,10 +15,17 @@ module Cascading
     end
 
     def add_child(node)
+      child = root.find_child(node.name)
+      warn "WARNING: adding '#{node.qualified_name}', but node named '#{node.name}' already exists at '#{child.qualified_name}'" if child
+
       @children[node.name] = node
       @child_names << node.name
       @last_child = node
       node
+    end
+
+    def qualified_name
+      parent ? "#{parent.qualified_name}.#{name}" : name
     end
 
     def describe(offset = '')
@@ -32,7 +39,12 @@ module Cascading
         result = child.find_child(name)
         return result if result
       end
-      return nil
+      nil
+    end
+
+    def root
+      return self unless parent
+      parent.root
     end
   end
 
@@ -57,6 +69,7 @@ module Cascading
 
     def add(name, instance)
       @registered ||= {}
+      warn "WARNING: node named '#{name}' already registered in #{self}" if @registered[name]
       @registered[name] = instance
     end
 
