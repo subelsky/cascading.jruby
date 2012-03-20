@@ -375,7 +375,8 @@ module Cascading
     # insert) and an options hash.
     #
     # Options include:
-    #   * <tt>:sql</tt> a boolean indicating whether the operation should act like the SQL equivalent
+    #   * <tt>:ignore</tt> a Java Array of Objects (for min and max) or Tuples
+    #     (for first and last) of values for the aggregator to ignore
     #
     # <tt>function</tt> is a symbol that is the method to call to construct the Cascading Aggregator.
     def composite_aggregator(args, function)

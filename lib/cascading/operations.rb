@@ -19,8 +19,14 @@ module Cascading
 
     def aggregator_function(args, aggregator_klass)
       options = args.extract_options!
-      ignore_values = options[:sql] ? [nil].to_java(java.lang.Object) : nil
-      parameters = [Cascading.fields(args), ignore_values].compact
+      ignore = options[:ignore]
+      raise "Option 'ignore' is only supported by min, max, first, and last" if ignore && ![
+        Java::CascadingOperationAggregator::First,
+        Java::CascadingOperationAggregator::Min,
+        Java::CascadingOperationAggregator::Max,
+        Java::CascadingOperationAggregator::Last,
+      ].include?(aggregator_klass)
+      parameters = [Cascading.fields(args), ignore].compact
       aggregator_klass.new(*parameters)
     end
 
