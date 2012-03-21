@@ -20,6 +20,7 @@ module Cascading
 
   # For applications built of Flows with no Cascades
   def flow(name, &block)
+    raise "Could not build flow '#{name}'; block required" unless block_given?
     flow = Flow.new(name, nil)
     flow.instance_eval(&block)
     flow
