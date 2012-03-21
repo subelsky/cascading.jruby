@@ -2,21 +2,31 @@ require 'test/unit'
 require 'cascading'
 
 class TC_Flow < Test::Unit::TestCase
-  def test_assembly
-    flow = flow 'My Flow1' do
-      assembly "Test1" do
+  def test_flow
+    flow = flow 'flow' do
+      $a1 = assembly 'assembly1' do
+      end
+
+      $a2 = assembly 'assembly2' do
       end
     end
 
-    assert_equal 1, flow.children.size
-    assert_equal flow.children["Test1"], flow.find_child("Test1")
-    assert_equal flow.last_child, flow.find_child("Test1")
+    assert_equal 2, flow.children.size
+    assert_equal $a1, flow.children['assembly1']
+    assert_equal $a1, flow.find_child('assembly1')
+    assert_equal $a2, flow.last_child
+    assert_equal $a2, flow.find_child('assembly2')
+    assert_equal ['assembly1', 'assembly2'], flow.child_names
 
+    assert_equal flow, $a1.parent
+    assert_equal flow, $a2.parent
+
+    assert_nil flow.parent
     assert_equal flow, flow.root
     assert_equal flow, flow.last_child.root
 
-    assert_equal 'My Flow1', flow.qualified_name
-    assert_equal 'My Flow1.Test1', flow.last_child.qualified_name
+    assert_equal 'flow', flow.qualified_name
+    assert_equal 'flow.assembly2', flow.last_child.qualified_name
   end
 
   def test_ambiguous_assembly_names
@@ -40,6 +50,9 @@ class TC_Flow < Test::Unit::TestCase
     assert_equal 2, flow.children.size
     assert_equal 'flow.a', $a1.qualified_name
     assert_equal 'flow.a', $a2.qualified_name
+
+    # Ordered child names do not collide
+    assert_equal ['a', 'a', 'x'], flow.child_names
 
     # FIXME: assembly defined last wins
     assert_equal $a2, flow.find_child('a')
@@ -72,6 +85,7 @@ class TC_Flow < Test::Unit::TestCase
     assert_equal 3, flow.children.size
     assert_equal 'flow.a.b', $b1.qualified_name
     assert_equal 'flow.b', $b2.qualified_name
+    assert_equal ['a', 'b', 'x'], flow.child_names
 
     # FIXME: branch hit by depth-first serach first
     assert_equal $b1, flow.find_child('b')
