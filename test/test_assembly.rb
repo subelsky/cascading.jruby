@@ -17,11 +17,12 @@ class TC_Assembly < Test::Unit::TestCase
   include Operations
 
   def mock_assembly(&block)
+    assembly = nil
     flow 'test' do
       source 'test', tap('test/data/data1.txt')
-      $assembly = assembly 'test', &block
+      assembly = assembly 'test', &block
     end
-    $assembly
+    assembly
   end
 
   def test_create_assembly_simple
