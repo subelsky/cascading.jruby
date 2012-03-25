@@ -14,8 +14,6 @@ def assembly(name, &block)
 end
 
 class TC_Assembly < Test::Unit::TestCase
-  include Operations
-
   def mock_assembly(&block)
     assembly = nil
     flow 'test' do
@@ -40,12 +38,10 @@ class TC_Assembly < Test::Unit::TestCase
       each 'offset', :filter => identity
     end
 
-    flow = Flow.get('test')
+    flow = assembly.parent
     assert_not_nil flow
-
     assert_not_nil flow.find_child('test')
     assert_equal assembly, flow.find_child('test')
-    assert_not_nil Flow.get('test').find_child('test')
   end
 
   def test_create_each
