@@ -90,14 +90,27 @@ module Cascading
     Java::CascadingTuple::Fields::RESULTS
   end
 
-  # Creates a c.s.TextLine scheme instance from the specified fields.
-  def text_line_scheme(*fields)
-    unless fields.empty?
-      fields = fields(fields)
-      return Java::CascadingScheme::TextLine.new(fields)
-    else
-      return Java::CascadingScheme::TextLine.new
+  # Creates a c.s.TextLine scheme.  Positional args are used if <tt>:source_fields</tt> is not provided.
+  #
+  # The named options are:
+  # * <tt>:source_fields</tt> a string or array of strings.  Specifies the
+  #   fields to be read from a source with this scheme.  Defaults to ['offset', 'line'].
+  # * <tt>:sink_fields</tt> a string or array of strings. Specifies the fields
+  #   to be written to a sink with this scheme.  Defaults to all_fields.
+  # * <tt>:compression</tt> a symbol, either <tt>:enable</tt> or
+  #   <tt>:disable</tt>, that governs the TextLine scheme's compression.  Defaults
+  #   to the default TextLine compression.
+  def text_line_scheme(*args)
+    options = args.extract_options!
+    source_fields = fields(options[:source_fields] || (args.empty? ? ['offset', 'line'] : args))
+    sink_fields = fields(options[:sink_fields]) || all_fields
+    sink_compression = case options[:compression]
+      when :enable  then Java::CascadingScheme::TextLine::Compress::ENABLE
+      when :disable then Java::CascadingScheme::TextLine::Compress::DISABLE
+      else Java::CascadingScheme::TextLine::Compress::DEFAULT
     end
+
+    Java::CascadingScheme::TextLine.new(source_fields, sink_fields, sink_compression)
   end
 
   # Creates a c.s.SequenceFile scheme instance from the specified fields.
