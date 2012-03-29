@@ -130,13 +130,13 @@ module Cascading
       if declared_fields
         case joiner
         when :inner, "inner", nil
-          joiner = Java::CascadingPipeCogroup::InnerJoin.new
+          joiner = Java::CascadingPipeJoiner::InnerJoin.new
         when :left,  "left"
-          joiner = Java::CascadingPipeCogroup::LeftJoin.new
+          joiner = Java::CascadingPipeJoiner::LeftJoin.new
         when :right, "right"
-          joiner = Java::CascadingPipeCogroup::RightJoin.new
+          joiner = Java::CascadingPipeJoiner::RightJoin.new
         when :outer, "outer"
-          joiner = Java::CascadingPipeCogroup::OuterJoin.new
+          joiner = Java::CascadingPipeJoiner::OuterJoin.new
         when Array
           joiner = joiner.map do |t|
             case t
@@ -145,7 +145,7 @@ module Cascading
             else fail "invalid mixed joiner entry: #{t}"
             end
           end
-          joiner = Java::CascadingPipeCogroup::MixedJoin.new(joiner.to_java(:boolean))
+          joiner = Java::CascadingPipeJoiner::MixedJoin.new(joiner.to_java(:boolean))
         end
       end
 

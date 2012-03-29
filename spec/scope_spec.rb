@@ -27,10 +27,9 @@ context Cascading::Scope do
 
       # Pass that uses our grouping fields instead of all_fields
       operation = Java::CascadingOperation::Identity.new 
-      make_each(# FIXME: names of grouping fields are not what we'd expect!
-                Java::CascadingPipe::Each, tail_pipe, fields([0, 'x_sum']), operation)
+      make_each(Java::CascadingPipe::Each, tail_pipe, fields(['x', 'x_sum']), operation)
 
-      check_scope :values_fields => [0, 'x_sum']
+      check_scope :values_fields => ['x', 'x_sum']
     end
   end
 
@@ -108,11 +107,6 @@ context Cascading::Scope do
         :grouping_fields => ['x', 'x_sum', 'y_sum']
       assert_size_equals 3
 
-      # No rename service provided unless you use the block form of join!
-      check_scope :values_fields => [0, 'x_sum', 'y_sum']
-
-      # Mimic rename service
-      bind_names ['x', 'x_sum', 'y_sum']
       check_scope :values_fields => ['x', 'x_sum', 'y_sum']
     end
   end
@@ -132,7 +126,7 @@ context Cascading::Scope do
         begin
           sum :mapping => {'x' => 'x_sum'}, :type => :int
         rescue CascadingException => e
-          raise e.cause(3)
+          raise e.cause
         end
       end
     end.should raise_error java.lang.IllegalStateException, 'Every cannot follow a Tap or an Each'
@@ -159,9 +153,9 @@ context Cascading::Scope do
           end
         end
       rescue CascadingException => e
-        raise e.cause(4)
+        raise e.cause
       end
-    end.should raise_error java.lang.IllegalStateException, 'Every cannot follow a Tap or an Each'
+    end.should raise_error Java::CascadingFlowPlanner::PlannerException, "[attempt_group][sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)] Every instances may not split after a GroupBy or CoGroup pipe, found: Every(attempt_group)[Sum[decl:'x_sum'][args:1]] after: CoGroup(left*right)[by:left:[{1}:'x']right:[{1}:'x']]"
   end
 
   it 'should propagate names through GroupBy' do

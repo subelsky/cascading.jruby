@@ -45,13 +45,15 @@ class TC_Assembly < Test::Unit::TestCase
   end
 
   def test_create_each
-    # You can't apply an Each to 0 fields
-    assert_raise CascadingException do
-      assembly = mock_assembly do
-        each(:filter => identity)
-      end
-      assert assembly.tail_pipe.is_a? Java::CascadingPipe::Each
+    # You can apply an Each to 0 fields
+    assembly = mock_assembly do
+      each(:filter => identity)
     end
+    assert assembly.tail_pipe.is_a? Java::CascadingPipe::Each
+
+    # In which case, it has empty argument and output selectors
+    assert_equal 0, assembly.tail_pipe.argument_selector.size
+    assert_equal 0, assembly.tail_pipe.output_selector.size
 
     assembly = mock_assembly do
       each('offset', :output => 'offset_copy',
@@ -61,8 +63,8 @@ class TC_Assembly < Test::Unit::TestCase
 
     assert pipe.is_a? Java::CascadingPipe::Each
 
-    assert_equal 'offset', pipe.getArgumentSelector().get(0)
-    assert_equal 'offset_copy', pipe.getOutputSelector().get(0)
+    assert_equal 'offset', pipe.argument_selector.get(0)
+    assert_equal 'offset_copy', pipe.output_selector.get(0)
   end
 
   # For now, replaced these tests with the trivial observation that you can't
@@ -89,7 +91,7 @@ class TC_Assembly < Test::Unit::TestCase
         every("Field1", :aggregator => count_function)
       end
       assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
-      assert_equal "Field1", assembly.tail_pipe.getArgumentSelector().get(0)
+      assert_equal "Field1", assembly.tail_pipe.argument_selector.get(0)
     end
 
     assert_raise CascadingException do
@@ -97,8 +99,8 @@ class TC_Assembly < Test::Unit::TestCase
         every('line', :aggregator => count_function, :output=>'line_count')
       end
       assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
-      assert_equal 'line', assembly.tail_pipe.getArgumentSelector().get(0)
-      assert_equal 'line_count', assembly.tail_pipe.getOutputSelector().get(0)
+      assert_equal 'line', assembly.tail_pipe.argument_selector.get(0)
+      assert_equal 'line_count', assembly.tail_pipe.output_selector.get(0)
     end
   end
 
@@ -108,7 +110,7 @@ class TC_Assembly < Test::Unit::TestCase
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
-    grouping_fields = assembly.tail_pipe.getGroupingSelectors()['test']
+    grouping_fields = assembly.tail_pipe.key_selectors['test']
     assert_equal 'line', grouping_fields.get(0)
 
     assembly = mock_assembly do
@@ -116,7 +118,7 @@ class TC_Assembly < Test::Unit::TestCase
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
-    grouping_fields = assembly.tail_pipe.getGroupingSelectors()['test']
+    grouping_fields = assembly.tail_pipe.key_selectors['test']
     assert_equal 'line', grouping_fields.get(0)
   end
 
@@ -126,7 +128,7 @@ class TC_Assembly < Test::Unit::TestCase
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
-    grouping_fields = assembly.tail_pipe.getGroupingSelectors()['test']
+    grouping_fields = assembly.tail_pipe.key_selectors['test']
     assert_equal 'offset', grouping_fields.get(0)
     assert_equal 'line', grouping_fields.get(1)
   end
@@ -137,8 +139,8 @@ class TC_Assembly < Test::Unit::TestCase
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
-    grouping_fields = assembly.tail_pipe.getGroupingSelectors()['test']
-    sorting_fields = assembly.tail_pipe.getSortingSelectors()['test']
+    grouping_fields = assembly.tail_pipe.key_selectors['test']
+    sorting_fields = assembly.tail_pipe.sorting_selectors['test']
 
     assert_equal 2, grouping_fields.size
     assert_equal 1, sorting_fields.size
@@ -156,8 +158,8 @@ class TC_Assembly < Test::Unit::TestCase
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
-    grouping_fields = assembly.tail_pipe.getGroupingSelectors()['test']
-    sorting_fields = assembly.tail_pipe.getSortingSelectors()['test']
+    grouping_fields = assembly.tail_pipe.key_selectors['test']
+    sorting_fields = assembly.tail_pipe.sorting_selectors['test']
 
     assert_equal 2, grouping_fields.size
     assert_equal 1, sorting_fields.size
@@ -175,8 +177,8 @@ class TC_Assembly < Test::Unit::TestCase
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
-    grouping_fields = assembly.tail_pipe.getGroupingSelectors()['test']
-    sorting_fields = assembly.tail_pipe.getSortingSelectors()['test']
+    grouping_fields = assembly.tail_pipe.key_selectors['test']
+    sorting_fields = assembly.tail_pipe.sorting_selectors['test']
 
     assert_equal 2, grouping_fields.size
     assert_equal 2, sorting_fields.size
@@ -283,10 +285,34 @@ class TC_Assembly < Test::Unit::TestCase
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::Each
     assert assembly.tail_pipe.operation.is_a? Java::CascadingOperationExpression::ExpressionFilter
   end
+
+  def test_smoke_test_debug_scope
+    cascade 'smoke' do
+      flow 'smoke' do
+        source 'input', tap('test/data/data1.txt')
+        assembly 'input' do
+          pass
+          debug_scope
+        end
+        sink 'input', tap('output/smoke_test_debug_scope')
+      end
+    end
+  end
 end
 
-
 class TC_AssemblyScenarii < Test::Unit::TestCase
+  def test_smoke_test_sequence_file_scheme
+    cascade 'smoke' do
+      flow 'smoke' do
+        source 'input', tap('test/data/data1.txt')
+        assembly 'input' do
+          pass
+        end
+        compress_output :default, :block
+        sink 'input', tap('output/smoke_test_sequence_file_scheme', :scheme => sequence_file_scheme)
+      end
+    end.complete
+  end
 
   def test_splitter
     flow = flow "splitter" do

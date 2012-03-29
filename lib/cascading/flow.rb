@@ -144,7 +144,11 @@ module Cascading
         puts "#{key}=#{properties[key]}"
       end
 
-      Java::CascadingFlow::FlowConnector.new(properties).connect(
+      # FIXME: why do I have to do this in 2.0 wip-255?
+      Java::CascadingFlow::FlowConnector.setApplicationName(properties, name)
+      Java::CascadingFlow::FlowConnector.setApplicationVersion(properties, '0.0.0')
+
+      Java::CascadingFlowHadoop::HadoopFlowConnector.new(properties).connect(
         name,
         make_tap_parameter(@sources),
         make_tap_parameter(@sinks),

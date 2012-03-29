@@ -40,7 +40,6 @@ module Cascading
     search_me = ::File.expand_path(
         ::File.join(from, '**', '*.jar'))
     Dir.glob(search_me).sort.each do |jar|
-      #puts "required: #{jar}"
       require jar
     end
   end

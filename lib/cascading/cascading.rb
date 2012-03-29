@@ -90,7 +90,7 @@ module Cascading
     Java::CascadingTuple::Fields::RESULTS
   end
 
-  # Creates a c.s.TextLine scheme.  Positional args are used if <tt>:source_fields</tt> is not provided.
+  # Creates a c.s.h.TextLine scheme.  Positional args are used if <tt>:source_fields</tt> is not provided.
   #
   # The named options are:
   # * <tt>:source_fields</tt> a string or array of strings.  Specifies the
@@ -105,21 +105,21 @@ module Cascading
     source_fields = fields(options[:source_fields] || (args.empty? ? ['offset', 'line'] : args))
     sink_fields = fields(options[:sink_fields]) || all_fields
     sink_compression = case options[:compression]
-      when :enable  then Java::CascadingScheme::TextLine::Compress::ENABLE
-      when :disable then Java::CascadingScheme::TextLine::Compress::DISABLE
-      else Java::CascadingScheme::TextLine::Compress::DEFAULT
+      when :enable  then Java::CascadingSchemeHadoop::TextLine::Compress::ENABLE
+      when :disable then Java::CascadingSchemeHadoop::TextLine::Compress::DISABLE
+      else Java::CascadingSchemeHadoop::TextLine::Compress::DEFAULT
     end
 
-    Java::CascadingScheme::TextLine.new(source_fields, sink_fields, sink_compression)
+    Java::CascadingSchemeHadoop::TextLine.new(source_fields, sink_fields, sink_compression)
   end
 
-  # Creates a c.s.SequenceFile scheme instance from the specified fields.
+  # Creates a c.s.h.SequenceFile scheme instance from the specified fields.
   def sequence_file_scheme(*fields)
     unless fields.empty?
       fields = fields(fields)
-      return Java::CascadingScheme::SequenceFile.new(fields)
+      return Java::CascadingSchemeHadoop::SequenceFile.new(fields)
     else
-      return Java::CascadingScheme::SequenceFile.new(all_fields)
+      return Java::CascadingSchemeHadoop::SequenceFile.new(all_fields)
     end
   end
 
@@ -142,9 +142,9 @@ module Cascading
     end
     fs = opts[:kind] || :hfs
     klass = case fs
-      when :hfs, 'hfs' then Java::CascadingTap::Hfs
-      when :dfs, 'dfs' then Java::CascadingTap::Dfs
-      when :lfs, 'lfs' then Java::CascadingTap::Lfs
+      when :hfs, 'hfs' then Java::CascadingTapHadoop::Hfs
+      when :dfs, 'dfs' then Java::CascadingTapHadoop::Dfs
+      when :lfs, 'lfs' then Java::CascadingTapHadoop::Lfs
       else raise "Unrecognized kind of tap '#{fs}'"
     end
     parameters = [scheme, path, sink_mode]

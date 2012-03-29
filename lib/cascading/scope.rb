@@ -49,17 +49,20 @@ module Cascading
       <<-END
 Scope name: #{@scope.name}
   Kind: #{kind}
-  Argument selector: #{@scope.argument_selector}
-  Declared fields: #{@scope.declared_fields}
-  Grouping selectors: #{@scope.grouping_selectors}
+  Key selectors:     #{@scope.key_selectors}
   Sorting selectors: #{@scope.sorting_selectors}
+  Remainder fields:  #{@scope.remainder_fields}
+  Declared fields:   #{@scope.declared_fields}
+  Arguments
+    selector:   #{@scope.arguments_selector}
+    declarator: #{@scope.arguments_declarator}
   Out grouping
-    selector: #{@scope.out_grouping_selector}
-    fields: #{grouping_fields}
-    key fields: #{@grouping_key_fields}
+    selector:   #{@scope.out_grouping_selector}
+    fields:     #{grouping_fields} (#{@scope.out_grouping_fields})
+    key fields: #{@grouping_key_fields} (#{@scope.key_selectors})
   Out values
     selector: #{@scope.out_values_selector}
-    fields: #{values_fields}
+    fields:   #{values_fields} (#{@scope.out_values_fields})
 END
     end
 
