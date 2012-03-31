@@ -4,7 +4,6 @@ $: << File.join(File.dirname(__FILE__), '..', 'lib')
 # History: "project" (verb) used to be known as "restrict"
 
 require 'cascading'
-require 'samples/cascading'
 
 cascade 'project' do
   flow 'project' do
@@ -21,4 +20,4 @@ cascade 'project' do
 
     sink 'input', tap('output/project', :sink_mode => :replace)
   end
-end.complete(sample_properties)
+end.complete(local_properties('build/sample'))

@@ -150,4 +150,28 @@ module Cascading
     parameters = [scheme, path, sink_mode]
     klass.new(*parameters)
   end
+
+  # Constructs properties to be passed to Flow#complete or Cascade#complete
+  # which will locate temporary Hadoop files in base_dir.  It is necessary
+  # to pass these properties only when executing local scripts via JRuby's main
+  # method, which confuses Cascading's attempt to find the containing jar.
+  def local_properties(base_dir)
+    dirs = {
+      'test.build.data' => "#{base_dir}/build",
+      'hadoop.tmp.dir' => "#{base_dir}/tmp",
+      'hadoop.log.dir' => "#{base_dir}/log",
+    }
+    dirs.each{ |key, dir| `mkdir -p #{dir}` }
+
+    job_conf = Java::OrgApacheHadoopMapred::JobConf.new
+    job_conf.jar = dirs['test.build.data']
+    dirs.each{ |key, dir| job_conf.set(key, dir) }
+
+    job_conf.num_map_tasks = 1
+    job_conf.num_reduce_tasks = 1
+
+    properties = java.util.HashMap.new
+    Java::CascadingFlowHadoop::HadoopPlanner.copy_job_conf(properties, job_conf)
+    properties
+  end
 end

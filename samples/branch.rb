@@ -3,7 +3,6 @@
 $: << File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'cascading'
-require 'samples/cascading'
 
 cascade 'branch' do
   flow 'branch' do
@@ -28,4 +27,4 @@ cascade 'branch' do
     sink 'branch1', tap('output/branch1', :sink_mode => :replace)
     sink 'branch2', tap('output/branch2', :sink_mode => :replace)
   end
-end.complete(sample_properties)
+end.complete(local_properties('build/sample'))

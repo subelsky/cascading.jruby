@@ -2,7 +2,6 @@
 $: << File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'cascading'
-require 'samples/cascading'
 
 cascade 'scorenames' do
   flow 'scorenames' do
@@ -17,4 +16,4 @@ cascade 'scorenames' do
 
     sink 'input', tap('output/scorenames', :sink_mode => :replace)
   end
-end.complete(sample_properties)
+end.complete(local_properties('build/sample'))

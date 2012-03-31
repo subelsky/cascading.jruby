@@ -25,7 +25,7 @@ def test_flow(&block)
   cascade = cascade 'test_app' do
     flow 'test', &block
   end
-  cascade.complete(cascading_properties)
+  cascade.complete(local_properties(BUILD_DIR))
 end
 
 def test_assembly(params = {}, &block)
@@ -89,24 +89,4 @@ def test_join_assembly(params = {}, &block)
       sink branch, tap("#{OUTPUT_DIR}/#{branch}_out.txt", :kind => :lfs, :sink_mode => :replace)
     end
   end
-end
-
-def cascading_properties
-  dirs = {
-    'test.build.data' => "#{BUILD_DIR}/build",
-    'hadoop.tmp.dir' => "#{BUILD_DIR}/tmp",
-    'hadoop.log.dir' => "#{BUILD_DIR}/log",
-  }
-  dirs.each{ |key, dir| `mkdir -p #{dir}` }
-
-  job_conf = Java::OrgApacheHadoopMapred::JobConf.new
-  job_conf.jar = dirs['test.build.data']
-  dirs.each{ |key, dir| job_conf.set(key, dir) }
-
-  job_conf.num_map_tasks = 1
-  job_conf.num_reduce_tasks = 1
-
-  properties = java.util.HashMap.new
-  Java::CascadingFlowHadoop::HadoopPlanner.copy_job_conf(properties, job_conf)
-  properties
 end
