@@ -1,3 +1,9 @@
+0.0.7 - Upgrade to Cascading 2.0.0 wip-255
+
+This release upgrades to Cascading 2.0.0 wip-255, but implements neither local
+mode nor aggregations through AggregateBy.  Local jobs continue to run in Hadoop
+mode, but we intend to release local mode support soon.
+
 0.0.6 - Removing primary key
 
 The primary key feature was a source of great confusion at Etsy, so it's been
