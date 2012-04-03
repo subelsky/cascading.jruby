@@ -328,6 +328,22 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
     end.complete
   end
 
+  def test_smoke_test_multi_source_tap
+    cascade 'multi_source_tap' do
+      flow 'multi_source_tap' do
+        tap1 = tap 'test/data/data1.txt'
+        tap2 = tap 'test/data/data2.txt'
+        source 'data', multi_source_tap(tap1, tap2)
+
+        assembly 'data' do
+          pass
+        end
+
+        sink 'data', tap('output/smoke_test_multi_source_tap')
+      end
+    end.complete
+  end
+
   def test_join1
     cascade 'splitter' do
       flow 'splitter' do

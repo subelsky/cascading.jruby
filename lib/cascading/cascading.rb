@@ -123,8 +123,12 @@ module Cascading
     end
   end
 
-  def multi_tap(*taps)
-    Java::CascadingTap::MultiTap.new(taps.to_java("cascading.tap.Tap"))
+  def multi_source_tap(*taps)
+    Java::CascadingTap::MultiSourceTap.new(taps.to_java('cascading.tap.Tap'))
+  end
+
+  def multi_sink_tap(*taps)
+    Java::CascadingTap::MultiSinkTap.new(taps.to_java('cascading.tap.Tap'))
   end
 
   # Generic method for creating taps.
