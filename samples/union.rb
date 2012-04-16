@@ -5,7 +5,9 @@ require 'cascading'
 
 cascade 'union' do
   flow 'union' do
-    source 'input', tap('http://www.census.gov/genealogy/names/dist.all.last')
+    # You don't have to curl and cache inputs: tap can fetch via HTTP
+    #source 'input', tap('http://www.census.gov/genealogy/names/dist.all.last')
+    source 'input', tap('samples/data/genealogy/names/dist.all.last')
 
     assembly 'input' do
       split 'line', ['name', 'score1', 'score2', 'id']

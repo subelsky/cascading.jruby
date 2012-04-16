@@ -6,7 +6,8 @@ require 'cascading'
 cascade 'scorenames' do
   flow 'scorenames' do
     # You don't have to curl and cache inputs: tap can fetch via HTTP
-    source 'input', tap('http://www.census.gov/genealogy/names/dist.all.last')
+    #source 'input', tap('http://www.census.gov/genealogy/names/dist.all.last')
+    source 'input', tap('samples/data/genealogy/names/dist.all.last')
 
     assembly 'input' do
       split 'line', ['name', 'val1', 'val2', 'id']
