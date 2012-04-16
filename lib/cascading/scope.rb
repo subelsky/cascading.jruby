@@ -22,7 +22,7 @@ module Cascading
       Scope.new(java_scope)
     end
 
-    def self.outgoing_scope(flow_element, incoming_scopes, grouping_key_fields, every_applied)
+    def self.outgoing_scope(flow_element, incoming_scopes, grouping_key_fields)
       java_scopes = incoming_scopes.compact.map{ |s| s.scope }
       Scope.new(outgoing_scope_for(flow_element, java.util.HashSet.new(java_scopes)),
           :grouping_key_fields => grouping_key_fields

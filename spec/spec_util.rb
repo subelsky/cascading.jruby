@@ -79,7 +79,7 @@ def test_join_assembly(params = {}, &block)
       check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
         :grouping_fields => ['x']
 
-      instance_eval(&block)
+      instance_eval &block
     end
 
     sink 'join', tap("#{OUTPUT_DIR}/join_out.txt", :kind => :lfs, :sink_mode => :replace)

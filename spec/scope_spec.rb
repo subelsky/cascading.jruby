@@ -5,7 +5,8 @@ context Cascading::Scope do
     test_assembly do
       # Pass that uses our scope instead of all_fields
       operation = Java::CascadingOperation::Identity.new 
-      make_each(Java::CascadingPipe::Each, tail_pipe, scope.values_fields, operation)
+      parameters = [tail_pipe, scope.values_fields, operation]
+      make_pipe(Java::CascadingPipe::Each, parameters)
 
       check_scope :values_fields => ['offset', 'line']
     end
@@ -15,7 +16,8 @@ context Cascading::Scope do
     test_join_assembly do
       # Pass that uses our scope instead of all_fields
       operation = Java::CascadingOperation::Identity.new 
-      make_each(Java::CascadingPipe::Each, tail_pipe, scope.values_fields, operation)
+      parameters = [tail_pipe, scope.values_fields, operation]
+      make_pipe(Java::CascadingPipe::Each, parameters)
 
       check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_']
     end
@@ -27,7 +29,8 @@ context Cascading::Scope do
 
       # Pass that uses our grouping fields instead of all_fields
       operation = Java::CascadingOperation::Identity.new 
-      make_each(Java::CascadingPipe::Each, tail_pipe, fields(['x', 'x_sum']), operation)
+      parameters = [tail_pipe, fields(['x', 'x_sum']), operation]
+      make_pipe(Java::CascadingPipe::Each, parameters)
 
       check_scope :values_fields => ['x', 'x_sum']
     end
@@ -160,9 +163,17 @@ context Cascading::Scope do
 
   it 'should propagate names through GroupBy' do
     test_assembly do
+      group_by 'line' do
+        count
+      end
+      check_scope :values_fields => ['line', 'count']
+    end
+  end
+
+  it 'should propagate names through blockless GroupBy' do
+    test_assembly do
       group_by 'line'
-      check_scope :values_fields => ['offset', 'line'],
-        :grouping_fields => ['line']
+      check_scope :values_fields => ['line']
     end
   end
 end

@@ -15,7 +15,6 @@ module Cascading
     def initialize(name, parent, outgoing_scopes = {})
       super(name, parent)
 
-      @every_applied = false
       @outgoing_scopes = outgoing_scopes
       if parent.kind_of?(Assembly)
         @head_pipe = Java::CascadingPipe::Pipe.new(name, parent.tail_pipe)
@@ -51,33 +50,29 @@ module Cascading
       puts "Current scope for '#{name}':\n  #{scope}\n----------\n"
     end
 
-    def make_each(type, *parameters)
-      make_pipe(type, parameters)
-      @every_applied = false
-    end
-
-    def make_every(type, *parameters)
-      make_pipe(type, parameters, scope.grouping_key_fields)
-      @every_applied = true
-    end
-
-    def every_applied?
-      @every_applied
-    end
-
-    def do_every_block_and_rename_fields(group_fields, incoming_scopes, &block)
-      return unless block
-
-      # TODO: this should really be instance evaled on an object
-      # that only allows aggregation and buffer operations.
-      instance_eval &block
-
-      bind_names scope.grouping_fields.to_a if every_applied?
-    end
-
     def make_pipe(type, parameters, grouping_key_fields = [], incoming_scopes = [scope])
       @tail_pipe = type.new(*parameters)
-      @outgoing_scopes[name] = Scope.outgoing_scope(@tail_pipe, incoming_scopes, grouping_key_fields, every_applied?)
+      @outgoing_scopes[name] = Scope.outgoing_scope(@tail_pipe, incoming_scopes, grouping_key_fields)
+    end
+
+    def do_every_block_and_rename_fields(group_by, &block)
+      instance_eval &block if block_given?
+
+      # "Fix" out values fields after a sequence of Everies.  This is a field
+      # name metadata fix which is why the Identity is not planned into the
+      # resulting Cascading pipe.  Without it, all values fields would
+      # propagate through group_by or joins and unions with blocks, which
+      # doesn't match Cascading's planner's behavior.
+      if block_given?
+        discard_each = Java::CascadingPipe::Each.new(@tail_pipe, all_fields, Java::CascadingOperation::Identity.new)
+        @outgoing_scopes[name] = Scope.outgoing_scope(discard_each, [scope], [])
+      elsif group_by && !block_given?
+        # Note for blockless group_by, all_fields refers to all out values
+        # fields before the group_by, so we must explicitly override with our
+        # field name metadata.
+        discard_each = Java::CascadingPipe::Each.new(@tail_pipe, scope.grouping_fields, Java::CascadingOperation::Identity.new)
+        @outgoing_scopes[name] = Scope.outgoing_scope(discard_each, [scope], [])
+      end
     end
 
     def to_s
@@ -152,7 +147,7 @@ module Cascading
       parameters = [pipes.to_java(Java::CascadingPipe::Pipe), group_fields, declared_fields, joiner].compact
       grouping_key_fields = group_fields[0] # Left key group wins
       make_pipe(Java::CascadingPipe::CoGroup, parameters, grouping_key_fields, incoming_scopes)
-      do_every_block_and_rename_fields(group_fields_names, incoming_scopes, &block)
+      do_every_block_and_rename_fields(false, &block)
     end
     alias co_group join
 
@@ -205,7 +200,7 @@ module Cascading
 
       parameters = [@tail_pipe, group_fields, sort_fields, reverse].compact
       make_pipe(Java::CascadingPipe::GroupBy, parameters, group_fields)
-      do_every_block_and_rename_fields(args, [scope], &block)
+      do_every_block_and_rename_fields(true, &block)
     end
 
     # Unifies several pipes sharing the same field structure.
@@ -223,7 +218,7 @@ module Cascading
       grouping_key_fields = fields(incoming_scopes.first.values_fields.get(0))
       make_pipe(Java::CascadingPipe::GroupBy, [pipes.to_java(Java::CascadingPipe::Pipe)], grouping_key_fields, incoming_scopes)
       # TODO: Shouldn't union_pipes accept an every block?
-      #do_every_block_and_rename_fields(args, incoming_scopes, &block)
+      #do_every_block_and_rename_fields(false, &block)
     end
 
     # Builds an basic _every_ pipe, and adds it to the current assembly.
@@ -235,7 +230,7 @@ module Cascading
       operation = options[:aggregator] || options[:buffer]
 
       parameters = [@tail_pipe, in_fields, operation, out_fields].compact
-      make_every(Java::CascadingPipe::Every, *parameters)
+      make_pipe(Java::CascadingPipe::Every, parameters, scope.grouping_key_fields)
     end
 
     # Builds a basic _each_ pipe, and adds it to the current assembly.
@@ -252,7 +247,7 @@ module Cascading
       operation = options[:filter] || options[:function]
 
       parameters = [@tail_pipe, in_fields, operation, out_fields].compact
-      make_each(Java::CascadingPipe::Each, *parameters)
+      make_pipe(Java::CascadingPipe::Each, parameters)
     end
 
     # Restricts the current assembly to the specified fields.
@@ -271,14 +266,6 @@ module Cascading
       discard_fields = fields(args)
       keep_fields = difference_fields(scope.values_fields, discard_fields)
       project(*keep_fields.to_a)
-    end
-
-    # Assign new names to initial fields in positional order.
-    # --
-    # Example:
-    #     bind_names "field1", "field2"
-    def bind_names(*new_names)
-      each all_fields, :function => Java::CascadingOperation::Identity.new(fields(new_names))
     end
 
     # Renames fields according to the mapping provided.
@@ -318,14 +305,16 @@ module Cascading
       options = args.extract_options!
       assertion = args[0]
       assertion_level = options[:level] || Java::CascadingOperation::AssertionLevel::STRICT
-      make_each(Java::CascadingPipe::Each, @tail_pipe, assertion_level, assertion)
+      parameters = [@tail_pipe, assertion_level, assertion]
+      make_pipe(Java::CascadingPipe::Each, parameters)
     end
 
     def assert_group(*args)
       options = args.extract_options!
       assertion = args[0]
       assertion_level = options[:level] || Java::CascadingOperation::AssertionLevel::STRICT
-      make_every(Java::CascadingPipe::Every, @tail_pipe, assertion_level, assertion)
+      parameters = [@tail_pipe, assertion_level, assertion]
+      make_pipe(Java::CascadingPipe::Every, parameters, scope.grouping_key_fields)
     end
 
     # Builds a debugging pipe.
