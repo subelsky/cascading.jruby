@@ -40,6 +40,15 @@ module Cascading
       fields(keys + grouping_fields[keys.size..-1])
     end
 
+    def scope_fields_to_s(accessor)
+      begin
+        fields = @scope.send(accessor)
+        fields.nil? ? 'null' : fields.to_s
+      rescue
+        'ERROR'
+      end
+    end
+
     def to_s
       kind = 'Unknown'
       kind = 'Tap'   if @scope.tap?
@@ -49,20 +58,20 @@ module Cascading
       <<-END
 Scope name: #{@scope.name}
   Kind: #{kind}
-  Key selectors:     #{@scope.key_selectors}
-  Sorting selectors: #{@scope.sorting_selectors}
-  Remainder fields:  #{@scope.remainder_fields}
-  Declared fields:   #{@scope.declared_fields}
+  Key selectors:     #{scope_fields_to_s(:key_selectors)}
+  Sorting selectors: #{scope_fields_to_s(:sorting_selectors)}
+  Remainder fields:  #{scope_fields_to_s(:remainder_fields)}
+  Declared fields:   #{scope_fields_to_s(:declared_fields)}
   Arguments
-    selector:   #{@scope.arguments_selector}
-    declarator: #{@scope.arguments_declarator}
+    selector:   #{scope_fields_to_s(:arguments_selector)}
+    declarator: #{scope_fields_to_s(:arguments_declarator)}
   Out grouping
-    selector:   #{@scope.out_grouping_selector}
-    fields:     #{grouping_fields} (#{@scope.out_grouping_fields})
-    key fields: #{@grouping_key_fields} (#{@scope.key_selectors})
+    selector:   #{scope_fields_to_s(:out_grouping_selector)}
+    fields:     #{grouping_fields} (#{scope_fields_to_s(:out_grouping_fields)})
+    key fields: #{@grouping_key_fields} (#{scope_fields_to_s(:key_selectors)})
   Out values
-    selector: #{@scope.out_values_selector}
-    fields:   #{values_fields} (#{@scope.out_values_fields})
+    selector: #{scope_fields_to_s(:out_values_selector)}
+    fields:   #{values_fields} (#{scope_fields_to_s(:out_values_fields)})
 END
     end
 
