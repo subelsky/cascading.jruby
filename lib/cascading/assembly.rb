@@ -219,6 +219,8 @@ module Cascading
       pipes, @incoming_scopes = [], []
       args.each do |assembly_name|
         assembly = parent_flow.find_child(assembly_name)
+        raise "Could not find assembly '#{assembly_name}' in union" unless assembly
+
         pipes << assembly.tail_pipe
         incoming_scopes << @outgoing_scopes[assembly.name]
       end

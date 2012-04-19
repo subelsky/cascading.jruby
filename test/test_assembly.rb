@@ -386,6 +386,24 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['offset', 'line'], union_scope.grouping_fields.to_a
   end
 
+  def test_union_undefined_inputs
+    assert_raise RuntimeError, "Could not find assembly 'doesnotexist' in union" do
+      flow 'test_union_undefined_inputs' do
+        source 'data1', tap('test/data/data1.txt')
+
+        assembly 'data1' do
+          pass
+        end
+
+        assembly 'union' do
+          union 'doesnotexist', 'data1'
+        end
+
+        sink 'union', tap('output/test_union_undefined_inputs')
+      end
+    end
+  end
+
   def test_create_join
     join_scope = nil
     assembly = mock_two_input_assembly do
