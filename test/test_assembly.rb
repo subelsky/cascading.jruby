@@ -1,13 +1,6 @@
 require 'test/unit'
 require 'cascading'
 
-# Convenience for basic assembly tests; not valid for applications
-def assembly(name, &block)
-  assembly = Assembly.new(name, nil)
-  assembly.instance_eval(&block)
-  assembly
-end
-
 class TC_Assembly < Test::Unit::TestCase
   def mock_assembly(&block)
     assembly = nil
@@ -41,11 +34,17 @@ class TC_Assembly < Test::Unit::TestCase
   end
 
   def test_create_assembly_simple
-    assembly = assembly 'assembly1' do
-      # Empty assembly
+    assembly = nil
+    flow 'test_create_assembly_simple' do
+      assembly = assembly 'assembly1' do
+        # Empty assembly
+      end
     end
 
     assert_not_nil assembly
+    assert_equal assembly.name, 'assembly1'
+    assert_equal 0, assembly.children.size
+
     pipe = assembly.tail_pipe
     assert pipe.is_a? Java::CascadingPipe::Pipe
   end
