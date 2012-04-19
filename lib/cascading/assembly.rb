@@ -237,6 +237,39 @@ module Cascading
     end
     alias :union_pipes :union
 
+    # Allows you to plugin Java SubAssemblies to a cascading.jruby Assembly.
+    #
+    # Assumptions:
+    #   * You will use the tail_pipe of this Assembly, otherwise you'll leave
+    #   it dangling as do join and union.
+    #   * Your subassembly will have only 1 tail pipe; branching is not
+    #   supported.  This allows you to continue operating upon the tail of the
+    #   subassembly within this Assembly.
+    #
+    # This is a low-level tool, so be careful.
+    def sub_assembly(sub_assembly)
+      raise 'SubAssembly must call setTails in constructor' unless sub_assembly.tails
+      raise 'SubAssembly must set exactly 1 tail in constructor' unless sub_assembly.tails.size == 1
+      old_tail = @tail_pipe
+      @tail_pipe = sub_assembly.tails.first
+
+      path = path(old_tail, @tail_pipe)
+      puts path.join(',')
+
+      path.each do |pipe|
+        @outgoing_scopes[name] = Scope.outgoing_scope(pipe, [scope])
+      end
+    end
+
+    def path(pipe, tail_pipes)
+      unwound = Java::CascadingPipe::SubAssembly.unwind(tail_pipes).to_a
+      # Join used because: http://jira.codehaus.org/browse/JRUBY-5136
+      raise "path is only applicable to linear paths; found #{unwound.size} pipes: [#{unwound.join(',')}]" unless unwound.size == 1
+      unwound = unwound.first
+      pipe == unwound ? [] : (path(pipe, unwound.previous) + [unwound])
+    end
+    private :path
+
     # Builds an basic _every_ pipe, and adds it to the current assembly.
     def every(*args)
       options = args.extract_options!

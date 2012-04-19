@@ -573,6 +573,29 @@ class TC_Assembly < Test::Unit::TestCase
     end
   end
 
+  def test_sub_assembly
+    assembly = mock_assembly do
+      sub_assembly Java::CascadingPipeAssembly::Discard.new(tail_pipe, fields('offset'))
+    end
+    assert_equal ['line'], assembly.scope.values_fields.to_a
+
+    assembly = mock_assembly do
+      sub_assembly Java::CascadingPipeAssembly::Retain.new(tail_pipe, fields('offset'))
+    end
+    assert_equal ['offset'], assembly.scope.values_fields.to_a
+
+    assembly = mock_assembly do
+      sub_assembly Java::CascadingPipeAssembly::Rename.new(tail_pipe, fields(['offset', 'line']), fields(['byte', 'line']))
+    end
+    assert_equal ['byte', 'line'], assembly.scope.values_fields.to_a
+
+    assembly = mock_assembly do
+      sub_assembly Java::CascadingPipeAssembly::Unique.new(tail_pipe, fields('line'))
+    end
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.grouping_fields.to_a
+  end
+
   def test_empty_where
     assembly = mock_assembly do
       split 'line', ['name', 'score1', 'score2', 'id'], :pattern => /[.,]*\s+/, :output => ['name', 'score1', 'score2', 'id']
