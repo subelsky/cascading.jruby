@@ -72,7 +72,8 @@ module Cascading
       "#{name} : head pipe : #{@head_pipe} - tail pipe: #{@tail_pipe}"
     end
 
-    # Builds a join (CoGroup) pipe. Requires a list of assembly names to join.
+    # Builds a join (CoGroup) pipe. Requires a list of assembly names to join
+    # and :on to specify the group_fields.
     def join(*args, &block)
       options = args.extract_options!
 
@@ -86,10 +87,12 @@ module Cascading
       end
 
       group_fields_args = options.delete(:on)
+      raise 'join requires :on parameter' unless group_fields_args
+
       if group_fields_args.kind_of?(String)
         group_fields_args = [group_fields_args]
       end
-      group_fields_names = group_fields_args.to_a
+
       group_fields = []
       if group_fields_args.kind_of?(Array)
         pipes.size.times do
@@ -106,35 +109,36 @@ module Cascading
           pipes << assembly.tail_pipe
           incoming_scopes << @outgoing_scopes[assembly.name]
           group_fields << fields(v)
-          group_fields_names = group_fields_args[keys.first].to_a
         end
+      else
+        raise "Unsupported data type for :on in join: '#{group_fields_args.class}'"
       end
+
+      raise 'join requires non-empty :on parameter' if group_fields_args.empty?
 
       group_fields = group_fields.to_java(Java::CascadingTuple::Fields)
       incoming_fields = incoming_scopes.map{ |s| s.values_fields }
       declared_fields = fields(options[:declared_fields] || dedup_fields(*incoming_fields))
       joiner = options.delete(:joiner)
 
-      if declared_fields
-        case joiner
-        when :inner, "inner", nil
-          joiner = Java::CascadingPipeJoiner::InnerJoin.new
-        when :left,  "left"
-          joiner = Java::CascadingPipeJoiner::LeftJoin.new
-        when :right, "right"
-          joiner = Java::CascadingPipeJoiner::RightJoin.new
-        when :outer, "outer"
-          joiner = Java::CascadingPipeJoiner::OuterJoin.new
-        when Array
-          joiner = joiner.map do |t|
-            case t
-            when true,  1, :inner then true
-            when false, 0, :outer then false
-            else fail "invalid mixed joiner entry: #{t}"
-            end
+      case joiner
+      when :inner, 'inner', nil
+        joiner = Java::CascadingPipeJoiner::InnerJoin.new
+      when :left,  'left'
+        joiner = Java::CascadingPipeJoiner::LeftJoin.new
+      when :right, 'right'
+        joiner = Java::CascadingPipeJoiner::RightJoin.new
+      when :outer, 'outer'
+        joiner = Java::CascadingPipeJoiner::OuterJoin.new
+      when Array
+        joiner = joiner.map do |t|
+          case t
+          when true,  1, :inner then true
+          when false, 0, :outer then false
+          else fail "invalid mixed joiner entry: #{t}"
           end
-          joiner = Java::CascadingPipeJoiner::MixedJoin.new(joiner.to_java(:boolean))
         end
+        joiner = Java::CascadingPipeJoiner::MixedJoin.new(joiner.to_java(:boolean))
       end
 
       result_group_fields = group_fields[0] # Leftmost key group wins

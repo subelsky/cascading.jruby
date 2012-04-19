@@ -33,6 +33,27 @@ class TC_Assembly < Test::Unit::TestCase
     assembly
   end
 
+  def mock_two_input_assembly(&block)
+    assembly = nil
+    flow 'mock_two_input_assembly' do
+      source 'test1', tap('test/data/data1.txt')
+      source 'test2', tap('test/data/data2.txt')
+
+      assembly 'test1' do
+        split 'line', :pattern => /[.,]*\s+/, :into => ['name', 'score1', 'score2', 'id'], :output => ['name', 'score1', 'score2', 'id']
+      end
+
+      assembly 'test2' do
+        split 'line', :pattern => /[.,]*\s+/, :into => ['name',  'id', 'town'], :output => ['name',  'id', 'town']
+      end
+
+      assembly = assembly 'test', &block
+
+      sink 'test', tap('output/test_mock_two_input_assembly')
+    end
+    assembly
+  end
+
   def test_create_assembly_simple
     assembly = nil
     flow 'test_create_assembly_simple' do
@@ -363,6 +384,123 @@ class TC_Assembly < Test::Unit::TestCase
 
     assert_equal ['offset', 'line'], union_scope.values_fields.to_a
     assert_equal ['offset', 'line'], union_scope.grouping_fields.to_a
+  end
+
+  def test_create_join
+    join_scope = nil
+    assembly = mock_two_input_assembly do
+      join 'test1', 'test2', :on => 'name'
+      join_scope = scope
+    end
+
+    assert assembly.tail_pipe.is_a? Java::CascadingPipe::CoGroup
+
+    left_grouping_fields = assembly.tail_pipe.key_selectors['test1']
+    assert_equal ['name'], left_grouping_fields.to_a
+
+    right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
+    assert_equal ['name'], right_grouping_fields.to_a
+
+    assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], join_scope.values_fields.to_a
+    assert_equal ['name'], join_scope.grouping_fields.to_a
+
+    assembly = mock_two_input_assembly do
+      join 'test1', 'test2', :on => 'id'
+      join_scope = scope
+    end
+
+    assert assembly.tail_pipe.is_a? Java::CascadingPipe::CoGroup
+    left_grouping_fields = assembly.tail_pipe.key_selectors['test1']
+    assert_equal ['id'], left_grouping_fields.to_a
+    right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
+    assert_equal ['id'], right_grouping_fields.to_a
+
+    assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], join_scope.values_fields.to_a
+    assert_equal ['id'], join_scope.grouping_fields.to_a
+  end
+
+  def test_create_join_many_fields
+    join_scope = nil
+    assembly = mock_two_input_assembly do
+      join 'test1', 'test2', :on => ['name', 'id']
+      join_scope = scope
+    end
+
+    assert assembly.tail_pipe.is_a? Java::CascadingPipe::CoGroup
+    left_grouping_fields = assembly.tail_pipe.key_selectors['test1']
+    assert_equal ['name', 'id'], left_grouping_fields.to_a
+    right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
+    assert_equal ['name', 'id'], right_grouping_fields.to_a
+
+    assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], join_scope.values_fields.to_a
+    assert_equal ['name', 'id'], join_scope.grouping_fields.to_a
+  end
+
+  def test_create_join_with_declared_fields
+    join_scope = nil
+    assembly = mock_two_input_assembly do
+      join 'test1', 'test2', :on => 'name', :declared_fields => ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+      join_scope = scope
+    end
+
+    assert assembly.tail_pipe.is_a? Java::CascadingPipe::CoGroup
+
+    left_grouping_fields = assembly.tail_pipe.key_selectors['test1']
+    assert_equal ['name'], left_grouping_fields.to_a
+
+    right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
+    assert_equal ['name'], right_grouping_fields.to_a
+
+    assert_equal ['a', 'b', 'c', 'd', 'e', 'f', 'g'], join_scope.values_fields.to_a
+    assert_equal ['name'], join_scope.grouping_fields.to_a
+  end
+
+  def test_join_undefined_inputs
+    assert_raise RuntimeError, "Could not find assembly 'doesnotexist' in join" do
+      flow 'test_join_undefined_inputs' do
+        source 'data1', tap('test/data/data1.txt')
+
+        assembly 'data1' do
+          pass
+        end
+
+        assembly 'join' do
+          join 'doesnotexist', 'data1', :on => 'name'
+        end
+
+        sink 'join', tap('output/test_join_undefined_inputs')
+      end
+    end
+  end
+
+  def test_join_without_on
+    assert_raise RuntimeError, 'join requires :on parameter' do
+      mock_two_input_assembly do
+        join 'test1', 'test2'
+      end
+    end
+  end
+
+  def test_join_invalid_on
+    assert_raise RuntimeError, "Unsupported data type for :on in join: 'Fixnum'" do
+      mock_two_input_assembly do
+        join 'test1', 'test2', :on => 1
+      end
+    end
+  end
+
+  def test_join_empty_on
+    assert_raise RuntimeError, 'join requres non-empty :on parameter' do
+      mock_two_input_assembly do
+        join 'test1', 'test2', :on => []
+      end
+    end
+
+    assert_raise RuntimeError, 'join requres non-empty :on parameter' do
+      mock_two_input_assembly do
+        join 'test1', 'test2', :on => {}
+      end
+    end
   end
 
   def test_branch_unique
