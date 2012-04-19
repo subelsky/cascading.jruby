@@ -200,27 +200,36 @@ module Cascading
       do_every_block_and_rename_fields(&block)
     end
 
-    # Unifies several pipes sharing the same field structure.
-    # This actually creates a GroupBy pipe.
-    # It expects a list of assembly names as parameter.
-    def union_pipes(*args)
+    # Unifies multiple incoming pipes sharing the same field structure using a
+    # GroupBy.  Accepts :on like join and :sort_by and :reverse like group_by,
+    # as well as a block which may be used for a sequence of Every
+    # aggregations.
+    #
+    # By default, groups only on the first field (see line 189 of GroupBy.java)
+    def union(*args, &block)
+      options = args.extract_options!
+      group_fields = fields(options[:on])
+      sort_fields = fields(options[:sort_by])
+      reverse = options[:reverse]
+
       pipes, @incoming_scopes = [], []
-      args[0].each do |assembly_name|
+      args.each do |assembly_name|
         assembly = parent_flow.find_child(assembly_name)
         pipes << assembly.tail_pipe
         incoming_scopes << @outgoing_scopes[assembly.name]
       end
 
-      # Groups only on the 1st field (see line 189 of GroupBy.java)
-      make_pipe(Java::CascadingPipe::GroupBy, [pipes.to_java(Java::CascadingPipe::Pipe)], incoming_scopes)
+      # Must provide group_fields to ensure field name propagation
+      group_fields = fields(incoming_scopes.first.values_fields.get(0)) unless group_fields
 
-      # FIXME: Apparently a GroupBy with no subsequent Everies should not
-      # aggregate and leave the input dataflow unchanged.  We should provide a
-      # block to union_pipes and we should parameterize it such that the caller
-      # can determine which field is grouped upon so that they can select a
-      # field with many unique values.
-      #do_every_block_and_rename_fields(&block)
+      # FIXME: GroupBy is missing a constructor for union in wip-255
+      sort_fields = group_fields if !sort_fields && !reverse.nil?
+
+      parameters = [pipes.to_java(Java::CascadingPipe::Pipe), group_fields, sort_fields, reverse].compact
+      make_pipe(Java::CascadingPipe::GroupBy, parameters, incoming_scopes)
+      do_every_block_and_rename_fields(&block)
     end
+    alias :union_pipes :union
 
     # Builds an basic _every_ pipe, and adds it to the current assembly.
     def every(*args)
@@ -680,14 +689,6 @@ module Cascading
       fields = args[0] || all_fields
       group_by *fields
       pass
-    end
-
-    # Builds a pipe that will unify (merge) pipes. The method accepts the list of pipes as argument.
-    # Tuples unified must share the same fields.
-    def union(*args)
-      options = args.extract_options!
-      pipes = args
-      union_pipes pipes
     end
 
     def join_fields(*args)
