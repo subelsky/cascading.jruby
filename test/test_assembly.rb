@@ -273,7 +273,7 @@ class TC_Assembly < Test::Unit::TestCase
           pass
           debug_scope
         end
-        sink 'input', tap('output/smoke_test_debug_scope')
+        sink 'input', tap('output/test_smoke_test_debug_scope')
       end
     end
   end
@@ -288,7 +288,7 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
           pass
         end
         compress_output :default, :block
-        sink 'input', tap('output/smoke_test_sequence_file_scheme', :scheme => sequence_file_scheme)
+        sink 'input', tap('output/test_smoke_test_sequence_file_scheme', :scheme => sequence_file_scheme)
       end
     end.complete
   end
@@ -304,7 +304,7 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
         debug :print_fields => true
       end
 
-      sink 'copy', tap('output/splitter', :sink_mode => :replace)
+      sink 'copy', tap('output/test_splitter', :sink_mode => :replace)
     end.complete
   end
 
@@ -319,7 +319,7 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
           pass
         end
 
-        sink 'data', tap('output/smoke_test_multi_source_tap')
+        sink 'data', tap('output/test_smoke_test_multi_source_tap')
       end
     end.complete
   end
@@ -354,7 +354,7 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
           assert_not_null
         end
 
-        sink 'joined', tap('output/joined', :sink_mode => :replace)
+        sink 'joined', tap('output/test_join1', :sink_mode => :replace)
       end
     end.complete
     assert_equal ['name', 'id'], join_grouping_fields
@@ -383,7 +383,7 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
         join_values_fields = scope.values_fields.to_a
       end
 
-      sink 'joined', tap('output/joined', :sink_mode => :replace)
+      sink 'joined', tap('output/test_join2', :sink_mode => :replace)
      end.complete
      assert_equal ['name', 'id'], join_grouping_fields
      assert_equal ['name', 'score1', 'score2', 'id', 'name2', 'code', 'town'], join_values_fields
@@ -421,7 +421,7 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
           union_values_fields = scope.values_fields.to_a
         end
 
-        sink 'union', tap('output/unioned', :sink_mode => :replace)
+        sink 'union', tap('output/test_union', :sink_mode => :replace)
      end
     end.complete
     assert_equal ['name'], union_grouping_fields
