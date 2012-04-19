@@ -144,9 +144,15 @@ module Cascading
         end
       end
 
-      parameters = [pipes.to_java(Java::CascadingPipe::Pipe), group_fields, declared_fields, joiner].compact
-      grouping_key_fields = group_fields[0] # Left key group wins
-      make_pipe(Java::CascadingPipe::CoGroup, parameters, grouping_key_fields, incoming_scopes)
+      result_group_fields = group_fields[0] # Leftmost key group wins
+      parameters = [
+        pipes.to_java(Java::CascadingPipe::Pipe),
+        group_fields,
+        declared_fields,
+        result_group_fields,
+        joiner
+      ]
+      make_pipe(Java::CascadingPipe::CoGroup, parameters, [], incoming_scopes)
       do_every_block_and_rename_fields(false, &block)
     end
     alias co_group join
@@ -188,18 +194,16 @@ module Cascading
       assembly
     end
 
-    # Builds a new _group_by_ pipe. The fields used for grouping are specified in the args
-    # array.
+    # Builds a new GroupBy pipe that groups on the fields given in args.
+    # Any block passed to this method should contain only Everies.
     def group_by(*args, &block)
       options = args.extract_options!
-
       group_fields = fields(args)
-
-      sort_fields = fields(options[:sort_by] || args)
+      sort_fields = fields(options[:sort_by])
       reverse = options[:reverse]
 
       parameters = [@tail_pipe, group_fields, sort_fields, reverse].compact
-      make_pipe(Java::CascadingPipe::GroupBy, parameters, group_fields)
+      make_pipe(Java::CascadingPipe::GroupBy, parameters, [])
       do_every_block_and_rename_fields(true, &block)
     end
 
@@ -214,10 +218,14 @@ module Cascading
         incoming_scopes << @outgoing_scopes[assembly.name]
       end
 
-      # Groups only on the 1st field (see line 186 of GroupBy.java)
-      grouping_key_fields = fields(incoming_scopes.first.values_fields.get(0))
-      make_pipe(Java::CascadingPipe::GroupBy, [pipes.to_java(Java::CascadingPipe::Pipe)], grouping_key_fields, incoming_scopes)
-      # TODO: Shouldn't union_pipes accept an every block?
+      # Groups only on the 1st field (see line 189 of GroupBy.java)
+      make_pipe(Java::CascadingPipe::GroupBy, [pipes.to_java(Java::CascadingPipe::Pipe)], [], incoming_scopes)
+
+      # FIXME: Apparently a GroupBy with no subsequent Everies should not
+      # aggregate and leave the input dataflow unchanged.  We should provide a
+      # block to union_pipes and we should parameterize it such that the caller
+      # can determine which field is grouped upon so that they can select a
+      # field with many unique values.
       #do_every_block_and_rename_fields(false, &block)
     end
 

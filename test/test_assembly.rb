@@ -181,14 +181,11 @@ class TC_Assembly < Test::Unit::TestCase
     sorting_fields = assembly.tail_pipe.sorting_selectors['test']
 
     assert_equal 2, grouping_fields.size
-    assert_equal 2, sorting_fields.size
+    assert_nil sorting_fields
 
-    assert_equal 'offset', grouping_fields.get(0)
-    assert_equal 'line', grouping_fields.get(1)
-    assert assembly.tail_pipe.isSorted()
-    assert assembly.tail_pipe.isSortReversed()
-    assert_equal 'offset', sorting_fields.get(0)
-    assert_equal 'line', sorting_fields.get(1)
+    assert_equal ['offset', 'line'], grouping_fields.to_a
+    assert !assembly.tail_pipe.is_sorted
+    assert assembly.tail_pipe.is_sort_reversed
   end
 
   def test_branch_unique
@@ -345,6 +342,7 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
   end
 
   def test_join1
+    join_grouping_fields, join_values_fields = nil, nil
     cascade 'splitter' do
       flow 'splitter' do
         source "data1", tap("test/data/data1.txt")
@@ -367,14 +365,20 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
 
         assembly "joined" do
           join assembly1.name, assembly2.name, :on => ["name", "id"], :declared_fields => ["name", "score1", "score2", "id", "name2", "id2", "town"]
+          join_grouping_fields = scope.grouping_fields.to_a
+          join_values_fields = scope.values_fields.to_a
+
           assert_size_equals 7
           assert_not_null
         end
       end
     end.complete
+    assert_equal ['name', 'id'], join_grouping_fields
+    assert_equal ['name', 'score1', 'score2', 'id', 'name2', 'id2', 'town'], join_values_fields
   end
 
   def test_join2
+    join_grouping_fields, join_values_fields = nil, nil
     flow = flow "splitter" do
       source "data1", tap("test/data/data1.txt")
       source "data2", tap("test/data/data2.txt")
@@ -392,7 +396,50 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
 
       assembly "joined" do
         join :on => {"data1"=>["name", "id"], "data2"=>["name", "code"]}, :declared_fields => ["name", "score1", "score2", "id", "name2", "code", "town"]
+        join_grouping_fields = scope.grouping_fields.to_a
+        join_values_fields = scope.values_fields.to_a
       end
      end.complete
+     assert_equal ['name', 'id'], join_grouping_fields
+     assert_equal ['name', 'score1', 'score2', 'id', 'name2', 'code', 'town'], join_values_fields
    end
+
+  def test_union
+    union_grouping_fields, union_values_fields = nil, nil
+    cascade 'union' do
+      flow 'union' do
+        source 'data1', tap('test/data/data1.txt')
+        source 'data2', tap('test/data/data2.txt')
+
+        assembly 'data1' do
+          split 'line', :pattern => /[.,]*\s+/, :into=>['name', 'score1', 'score2', 'id'], :output => ['name', 'score1', 'score2', 'id']
+          assert_size_equals 4
+          assert_not_null
+
+          project 'name', 'id'
+          assert_size_equals 2
+        end
+
+        assembly 'data2' do
+          split 'line', :pattern => /[.,]*\s+/, :into=>['name',  'code', 'town'], :output => ['name',  'code', 'town']
+          assert_size_equals 3
+          assert_not_null
+
+          rename 'code' => 'id'
+          project 'name', 'id'
+          assert_size_equals 2
+        end
+
+        assembly 'union' do
+          union 'data1', 'data2'
+          union_grouping_fields = scope.grouping_fields.to_a
+          union_values_fields = scope.values_fields.to_a
+        end
+
+        sink 'union', tap('output/unioned', :sink_mode => :replace)
+     end
+    end.complete
+    assert_equal ['name'], union_grouping_fields
+    assert_equal ['name', 'id'], union_values_fields
+  end
 end
