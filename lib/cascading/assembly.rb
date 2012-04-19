@@ -86,7 +86,7 @@ module Cascading
         incoming_scopes << @outgoing_scopes[assembly.name]
       end
 
-      group_fields_args = options.delete(:on)
+      group_fields_args = options[:on]
       raise 'join requires :on parameter' unless group_fields_args
 
       if group_fields_args.kind_of?(String)
@@ -119,7 +119,7 @@ module Cascading
       group_fields = group_fields.to_java(Java::CascadingTuple::Fields)
       incoming_fields = incoming_scopes.map{ |s| s.values_fields }
       declared_fields = fields(options[:declared_fields] || dedup_fields(*incoming_fields))
-      joiner = options.delete(:joiner)
+      joiner = options[:joiner]
 
       case joiner
       when :inner, 'inner', nil
