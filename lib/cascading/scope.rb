@@ -1,14 +1,13 @@
 module Cascading
   class Scope
-    attr_accessor :scope, :grouping_key_fields
+    attr_accessor :scope
 
-    def initialize(scope, params = {})
+    def initialize(scope)
       @scope = scope
-      @grouping_key_fields = fields(params[:grouping_key_fields] || [])
     end
 
     def copy
-      Scope.new(Java::CascadingFlow::Scope.new(@scope), :grouping_key_fields => @grouping_key_fields)
+      Scope.new(Java::CascadingFlow::Scope.new(@scope))
     end
 
     def self.empty_scope(name)
@@ -22,11 +21,9 @@ module Cascading
       Scope.new(java_scope)
     end
 
-    def self.outgoing_scope(flow_element, incoming_scopes, grouping_key_fields)
+    def self.outgoing_scope(flow_element, incoming_scopes)
       java_scopes = incoming_scopes.compact.map{ |s| s.scope }
-      Scope.new(outgoing_scope_for(flow_element, java.util.HashSet.new(java_scopes)),
-          :grouping_key_fields => grouping_key_fields
-      )
+      Scope.new(outgoing_scope_for(flow_element, java.util.HashSet.new(java_scopes)))
     end
 
     def values_fields
@@ -34,10 +31,7 @@ module Cascading
     end
 
     def grouping_fields
-      keys = @grouping_key_fields.to_a
-      grouping_fields = @scope.out_grouping_fields.to_a
-      # Overwrite key fields only
-      fields(keys + grouping_fields[keys.size..-1])
+      @scope.out_grouping_fields
     end
 
     def scope_fields_to_s(accessor)
@@ -67,11 +61,11 @@ Scope name: #{@scope.name}
     declarator: #{scope_fields_to_s(:arguments_declarator)}
   Out grouping
     selector:   #{scope_fields_to_s(:out_grouping_selector)}
-    fields:     #{grouping_fields} (#{scope_fields_to_s(:out_grouping_fields)})
-    key fields: #{@grouping_key_fields} (#{scope_fields_to_s(:key_selectors)})
+    fields:     #{scope_fields_to_s(:out_grouping_fields)}
+    key fields: #{scope_fields_to_s(:key_selectors)}
   Out values
     selector: #{scope_fields_to_s(:out_values_selector)}
-    fields:   #{values_fields} (#{scope_fields_to_s(:out_values_fields)})
+    fields:   #{scope_fields_to_s(:out_values_fields)}
 END
     end
 

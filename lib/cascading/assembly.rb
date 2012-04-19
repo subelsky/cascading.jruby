@@ -50,9 +50,9 @@ module Cascading
       puts "Current scope for '#{name}':\n  #{scope}\n----------\n"
     end
 
-    def make_pipe(type, parameters, grouping_key_fields = [], incoming_scopes = [scope])
+    def make_pipe(type, parameters, incoming_scopes = [scope])
       @tail_pipe = type.new(*parameters)
-      @outgoing_scopes[name] = Scope.outgoing_scope(@tail_pipe, incoming_scopes, grouping_key_fields)
+      @outgoing_scopes[name] = Scope.outgoing_scope(@tail_pipe, incoming_scopes)
     end
 
     def do_every_block_and_rename_fields(group_by, &block)
@@ -65,13 +65,13 @@ module Cascading
       # doesn't match Cascading's planner's behavior.
       if block_given?
         discard_each = Java::CascadingPipe::Each.new(@tail_pipe, all_fields, Java::CascadingOperation::Identity.new)
-        @outgoing_scopes[name] = Scope.outgoing_scope(discard_each, [scope], [])
+        @outgoing_scopes[name] = Scope.outgoing_scope(discard_each, [scope])
       elsif group_by && !block_given?
         # Note for blockless group_by, all_fields refers to all out values
         # fields before the group_by, so we must explicitly override with our
         # field name metadata.
         discard_each = Java::CascadingPipe::Each.new(@tail_pipe, scope.grouping_fields, Java::CascadingOperation::Identity.new)
-        @outgoing_scopes[name] = Scope.outgoing_scope(discard_each, [scope], [])
+        @outgoing_scopes[name] = Scope.outgoing_scope(discard_each, [scope])
       end
     end
 
@@ -152,7 +152,7 @@ module Cascading
         result_group_fields,
         joiner
       ]
-      make_pipe(Java::CascadingPipe::CoGroup, parameters, [], incoming_scopes)
+      make_pipe(Java::CascadingPipe::CoGroup, parameters, incoming_scopes)
       do_every_block_and_rename_fields(false, &block)
     end
     alias co_group join
@@ -203,7 +203,7 @@ module Cascading
       reverse = options[:reverse]
 
       parameters = [@tail_pipe, group_fields, sort_fields, reverse].compact
-      make_pipe(Java::CascadingPipe::GroupBy, parameters, [])
+      make_pipe(Java::CascadingPipe::GroupBy, parameters)
       do_every_block_and_rename_fields(true, &block)
     end
 
@@ -219,7 +219,7 @@ module Cascading
       end
 
       # Groups only on the 1st field (see line 189 of GroupBy.java)
-      make_pipe(Java::CascadingPipe::GroupBy, [pipes.to_java(Java::CascadingPipe::Pipe)], [], incoming_scopes)
+      make_pipe(Java::CascadingPipe::GroupBy, [pipes.to_java(Java::CascadingPipe::Pipe)], incoming_scopes)
 
       # FIXME: Apparently a GroupBy with no subsequent Everies should not
       # aggregate and leave the input dataflow unchanged.  We should provide a
@@ -238,7 +238,7 @@ module Cascading
       operation = options[:aggregator] || options[:buffer]
 
       parameters = [@tail_pipe, in_fields, operation, out_fields].compact
-      make_pipe(Java::CascadingPipe::Every, parameters, scope.grouping_key_fields)
+      make_pipe(Java::CascadingPipe::Every, parameters)
     end
 
     # Builds a basic _each_ pipe, and adds it to the current assembly.
@@ -322,7 +322,7 @@ module Cascading
       assertion = args[0]
       assertion_level = options[:level] || Java::CascadingOperation::AssertionLevel::STRICT
       parameters = [@tail_pipe, assertion_level, assertion]
-      make_pipe(Java::CascadingPipe::Every, parameters, scope.grouping_key_fields)
+      make_pipe(Java::CascadingPipe::Every, parameters)
     end
 
     # Builds a debugging pipe.
