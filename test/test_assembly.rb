@@ -1,11 +1,6 @@
 require 'test/unit'
 require 'cascading'
 
-def compare_with_references(test_name)
-  result = compare_files("test/references/#{test_name}.txt", "output/#{test_name}/part-00000")
-  assert_nil(result)
-end
-
 # Convenience for basic assembly tests; not valid for applications
 def assembly(name, &block)
   assembly = Assembly.new(name, nil)
@@ -24,7 +19,7 @@ class TC_Assembly < Test::Unit::TestCase
   end
 
   def test_create_assembly_simple
-    assembly = assembly "assembly1" do
+    assembly = assembly 'assembly1' do
       # Empty assembly
     end
 
@@ -56,15 +51,14 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal 0, assembly.tail_pipe.output_selector.size
 
     assembly = mock_assembly do
-      each('offset', :output => 'offset_copy',
-           :filter => Java::CascadingOperation::Identity.new(fields('offset_copy')))
+      each 'offset', :output => 'offset_copy', :filter => Java::CascadingOperation::Identity.new(fields('offset_copy'))
     end
     pipe = assembly.tail_pipe
 
     assert pipe.is_a? Java::CascadingPipe::Each
 
-    assert_equal 'offset', pipe.argument_selector.get(0)
-    assert_equal 'offset_copy', pipe.output_selector.get(0)
+    assert_equal ['offset'], pipe.argument_selector.to_a
+    assert_equal ['offset_copy'], pipe.output_selector.to_a
   end
 
   # For now, replaced these tests with the trivial observation that you can't
@@ -73,7 +67,7 @@ class TC_Assembly < Test::Unit::TestCase
   def test_create_every
     assert_raise CascadingException do
       assembly = mock_assembly do
-        every(:aggregator => count_function)
+        every :aggregator => count_function
       end
       pipe = assembly.tail_pipe
       assert pipe.is_a? Java::CascadingPipe::Every
@@ -81,111 +75,103 @@ class TC_Assembly < Test::Unit::TestCase
 
     assert_raise CascadingException do
       assembly = mock_assembly do
-        every(:aggregator => count_function("field1", "field2"))
+        every :aggregator => count_function('field1', 'field2')
       end
       assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
     end
 
     assert_raise CascadingException do
       assembly = mock_assembly do
-        every("Field1", :aggregator => count_function)
+        every 'field1', :aggregator => count_function
       end
       assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
-      assert_equal "Field1", assembly.tail_pipe.argument_selector.get(0)
+      assert_equal ['field1'], assembly.tail_pipe.argument_selector.to_a
     end
 
     assert_raise CascadingException do
       assembly = mock_assembly do
-        every('line', :aggregator => count_function, :output=>'line_count')
+        every 'line', :aggregator => count_function, :output=>'line_count'
       end
       assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
-      assert_equal 'line', assembly.tail_pipe.argument_selector.get(0)
-      assert_equal 'line_count', assembly.tail_pipe.output_selector.get(0)
+      assert_equal ['line'], assembly.tail_pipe.argument_selector.to_a
+      assert_equal ['line_count'], assembly.tail_pipe.output_selector.to_a
     end
   end
 
   def test_create_group_by
     assembly = mock_assembly do
-      group_by('line')
+      group_by 'line'
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
     grouping_fields = assembly.tail_pipe.key_selectors['test']
-    assert_equal 'line', grouping_fields.get(0)
+    assert_equal ['line'], grouping_fields.to_a
 
     assembly = mock_assembly do
-      group_by('line')
+      group_by 'line'
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
     grouping_fields = assembly.tail_pipe.key_selectors['test']
-    assert_equal 'line', grouping_fields.get(0)
+    assert_equal ['line'], grouping_fields.to_a
   end
 
   def test_create_group_by_many_fields
     assembly = mock_assembly do
-      group_by(['offset', 'line'])
+      group_by 'offset', 'line'
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
     grouping_fields = assembly.tail_pipe.key_selectors['test']
-    assert_equal 'offset', grouping_fields.get(0)
-    assert_equal 'line', grouping_fields.get(1)
+    assert_equal ['offset', 'line'], grouping_fields.to_a
   end
 
   def test_create_group_by_with_sort
     assembly = mock_assembly do
-      group_by('offset', 'line', :sort_by => ['line'])
+      group_by 'offset', 'line', :sort_by => 'line'
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
     grouping_fields = assembly.tail_pipe.key_selectors['test']
     sorting_fields = assembly.tail_pipe.sorting_selectors['test']
 
-    assert_equal 2, grouping_fields.size
-    assert_equal 1, sorting_fields.size
+    assert assembly.tail_pipe.is_sorted
+    assert !assembly.tail_pipe.is_sort_reversed
 
-    assert_equal 'offset', grouping_fields.get(0)
-    assert_equal 'line', grouping_fields.get(1)
-    assert assembly.tail_pipe.isSorted()
-    assert !assembly.tail_pipe.isSortReversed()
-    assert_equal 'line', sorting_fields.get(0)
+    assert_equal ['offset', 'line'], grouping_fields.to_a
+    assert_equal ['line'], sorting_fields.to_a
   end
 
   def test_create_group_by_with_sort_reverse
     assembly = mock_assembly do
-      group_by('offset', 'line', :sort_by => ['line'], :reverse => true)
+      group_by 'offset', 'line', :sort_by => 'line', :reverse => true
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
     grouping_fields = assembly.tail_pipe.key_selectors['test']
     sorting_fields = assembly.tail_pipe.sorting_selectors['test']
 
-    assert_equal 2, grouping_fields.size
-    assert_equal 1, sorting_fields.size
+    assert assembly.tail_pipe.is_sorted
+    assert assembly.tail_pipe.is_sort_reversed
 
-    assert_equal 'offset', grouping_fields.get(0)
-    assert_equal 'line', grouping_fields.get(1)
-    assert assembly.tail_pipe.isSorted()
-    assert assembly.tail_pipe.isSortReversed()
-    assert_equal 'line', sorting_fields.get(0)
+    assert_equal ['offset', 'line'], grouping_fields.to_a
+    assert_equal ['line'], sorting_fields.to_a
   end
 
   def test_create_group_by_reverse
     assembly = mock_assembly do
-      group_by('offset', 'line', :reverse => true)
+      group_by 'offset', 'line', :reverse => true
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
     grouping_fields = assembly.tail_pipe.key_selectors['test']
     sorting_fields = assembly.tail_pipe.sorting_selectors['test']
 
-    assert_equal 2, grouping_fields.size
-    assert_nil sorting_fields
-
-    assert_equal ['offset', 'line'], grouping_fields.to_a
     assert !assembly.tail_pipe.is_sorted
     assert assembly.tail_pipe.is_sort_reversed
+
+    assert_equal ['offset', 'line'], grouping_fields.to_a
+    assert_nil sorting_fields
   end
 
   def test_branch_unique
@@ -195,7 +181,6 @@ class TC_Assembly < Test::Unit::TestCase
     end
 
     assert_equal 1, assembly.children.size
-
   end
 
   def test_branch_empty
@@ -228,8 +213,6 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal 0, assembly.children['branch1'].children['branch2'].children.size
   end
 
-  # Fixed this test, but it isn't even valid.  You shouldn't be able to follow
-  # an Each with an Every.
   def test_full_assembly
     assert_raise CascadingException do
       assembly = mock_assembly do
@@ -239,7 +222,6 @@ class TC_Assembly < Test::Unit::TestCase
       end
 
       pipe = assembly.tail_pipe
-
       assert pipe.is_a? Java::CascadingPipe::Every
     end
   end
@@ -312,12 +294,12 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
   end
 
   def test_splitter
-    flow = flow "splitter" do
-      source "copy", tap("test/data/data1.txt")
-      sink "copy", tap('output/splitter', :sink_mode => :replace)
+    flow = flow 'splitter' do
+      source 'copy', tap('test/data/data1.txt')
+      sink 'copy', tap('output/splitter', :sink_mode => :replace)
 
-      assembly "copy" do
-        split "line", :pattern => /[.,]*\s+/, :into=>["name", "score1", "score2", "id"], :output => ["name", "score1", "score2", "id"]
+      assembly 'copy' do
+        split 'line', :pattern => /[.,]*\s+/, :into=>['name', 'score1', 'score2', 'id'], :output => ['name', 'score1', 'score2', 'id']
         assert_size_equals 4
         assert_not_null
         debug :print_fields => true
@@ -345,26 +327,26 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
     join_grouping_fields, join_values_fields = nil, nil
     cascade 'splitter' do
       flow 'splitter' do
-        source "data1", tap("test/data/data1.txt")
-        source "data2", tap("test/data/data2.txt")
-        sink "joined", tap('output/joined', :sink_mode => :replace)
+        source 'data1', tap('test/data/data1.txt')
+        source 'data2', tap('test/data/data2.txt')
+        sink 'joined', tap('output/joined', :sink_mode => :replace)
 
-        assembly1 = assembly "data1" do
-          split "line", :pattern => /[.,]*\s+/, :into=>["name", "score1", "score2", "id"], :output => ["name", "score1", "score2", "id"]
+        assembly1 = assembly 'data1' do
+          split 'line', :pattern => /[.,]*\s+/, :into => ['name', 'score1', 'score2', 'id'], :output => ['name', 'score1', 'score2', 'id']
           assert_size_equals 4
           assert_not_null
           debug :print_fields => true
         end
 
-        assembly2 = assembly "data2" do
-          split "line", :pattern => /[.,]*\s+/, :into=>["name",  "id", "town"], :output => ["name",  "id", "town"]
+        assembly2 = assembly 'data2' do
+          split 'line', :pattern => /[.,]*\s+/, :into => ['name',  'id', 'town'], :output => ['name',  'id', 'town']
           assert_size_equals 3
           assert_not_null
           debug :print_fields => true
         end
 
-        assembly "joined" do
-          join assembly1.name, assembly2.name, :on => ["name", "id"], :declared_fields => ["name", "score1", "score2", "id", "name2", "id2", "town"]
+        assembly 'joined' do
+          join assembly1.name, assembly2.name, :on => ['name', 'id'], :declared_fields => ['name', 'score1', 'score2', 'id', 'name2', 'id2', 'town']
           join_grouping_fields = scope.grouping_fields.to_a
           join_values_fields = scope.values_fields.to_a
 
@@ -379,23 +361,23 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
 
   def test_join2
     join_grouping_fields, join_values_fields = nil, nil
-    flow = flow "splitter" do
-      source "data1", tap("test/data/data1.txt")
-      source "data2", tap("test/data/data2.txt")
-      sink "joined", tap('output/joined', :sink_mode => :replace)
+    flow = flow 'splitter' do
+      source 'data1', tap('test/data/data1.txt')
+      source 'data2', tap('test/data/data2.txt')
+      sink 'joined', tap('output/joined', :sink_mode => :replace)
 
-      assembly "data1" do
-        split "line", :pattern => /[.,]*\s+/, :into=>["name", "score1", "score2", "id"], :output => ["name", "score1", "score2", "id"]
+      assembly 'data1' do
+        split 'line', :pattern => /[.,]*\s+/, :into => ['name', 'score1', 'score2', 'id'], :output => ['name', 'score1', 'score2', 'id']
         debug :print_fields => true
       end
 
-      assembly "data2" do
-        split "line", :pattern => /[.,]*\s+/, :into=>["name",  "code", "town"], :output => ["name",  "code", "town"]
+      assembly 'data2' do
+        split 'line', :pattern => /[.,]*\s+/, :into => ['name',  'code', 'town'], :output => ['name',  'code', 'town']
         debug :print_fields => true
       end
 
-      assembly "joined" do
-        join :on => {"data1"=>["name", "id"], "data2"=>["name", "code"]}, :declared_fields => ["name", "score1", "score2", "id", "name2", "code", "town"]
+      assembly 'joined' do
+        join :on => {'data1' => ['name', 'id'], 'data2' => ['name', 'code']}, :declared_fields => ['name', 'score1', 'score2', 'id', 'name2', 'code', 'town']
         join_grouping_fields = scope.grouping_fields.to_a
         join_values_fields = scope.values_fields.to_a
       end
@@ -412,7 +394,7 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
         source 'data2', tap('test/data/data2.txt')
 
         assembly 'data1' do
-          split 'line', :pattern => /[.,]*\s+/, :into=>['name', 'score1', 'score2', 'id'], :output => ['name', 'score1', 'score2', 'id']
+          split 'line', :pattern => /[.,]*\s+/, :into => ['name', 'score1', 'score2', 'id'], :output => ['name', 'score1', 'score2', 'id']
           assert_size_equals 4
           assert_not_null
 
@@ -421,7 +403,7 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
         end
 
         assembly 'data2' do
-          split 'line', :pattern => /[.,]*\s+/, :into=>['name',  'code', 'town'], :output => ['name',  'code', 'town']
+          split 'line', :pattern => /[.,]*\s+/, :into => ['name',  'code', 'town'], :output => ['name',  'code', 'town']
           assert_size_equals 3
           assert_not_null
 
