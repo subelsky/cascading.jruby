@@ -28,7 +28,7 @@ task :run do
 end
 
 desc 'Remove gem and Java build files'
-task :clean => ['ant:clean', 'gem:clean'] do
+task :clean => ['ant:clean', 'gem:clean', 'samples:clean'] do
   puts 'Build files removed'
 end
 
