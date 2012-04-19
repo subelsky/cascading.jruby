@@ -296,7 +296,6 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
   def test_splitter
     flow = flow 'splitter' do
       source 'copy', tap('test/data/data1.txt')
-      sink 'copy', tap('output/splitter', :sink_mode => :replace)
 
       assembly 'copy' do
         split 'line', :pattern => /[.,]*\s+/, :into=>['name', 'score1', 'score2', 'id'], :output => ['name', 'score1', 'score2', 'id']
@@ -304,6 +303,8 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
         assert_not_null
         debug :print_fields => true
       end
+
+      sink 'copy', tap('output/splitter', :sink_mode => :replace)
     end.complete
   end
 
@@ -329,7 +330,6 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
       flow 'splitter' do
         source 'data1', tap('test/data/data1.txt')
         source 'data2', tap('test/data/data2.txt')
-        sink 'joined', tap('output/joined', :sink_mode => :replace)
 
         assembly1 = assembly 'data1' do
           split 'line', :pattern => /[.,]*\s+/, :into => ['name', 'score1', 'score2', 'id'], :output => ['name', 'score1', 'score2', 'id']
@@ -353,6 +353,8 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
           assert_size_equals 7
           assert_not_null
         end
+
+        sink 'joined', tap('output/joined', :sink_mode => :replace)
       end
     end.complete
     assert_equal ['name', 'id'], join_grouping_fields
@@ -364,7 +366,6 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
     flow = flow 'splitter' do
       source 'data1', tap('test/data/data1.txt')
       source 'data2', tap('test/data/data2.txt')
-      sink 'joined', tap('output/joined', :sink_mode => :replace)
 
       assembly 'data1' do
         split 'line', :pattern => /[.,]*\s+/, :into => ['name', 'score1', 'score2', 'id'], :output => ['name', 'score1', 'score2', 'id']
@@ -381,6 +382,8 @@ class TC_AssemblyScenarii < Test::Unit::TestCase
         join_grouping_fields = scope.grouping_fields.to_a
         join_values_fields = scope.values_fields.to_a
       end
+
+      sink 'joined', tap('output/joined', :sink_mode => :replace)
      end.complete
      assert_equal ['name', 'id'], join_grouping_fields
      assert_equal ['name', 'score1', 'score2', 'id', 'name2', 'code', 'town'], join_values_fields
