@@ -173,7 +173,7 @@ context Cascading::Scope do
   it 'should propagate names through blockless GroupBy' do
     test_assembly do
       group_by 'line'
-      check_scope :values_fields => ['line']
+      check_scope :values_fields => ['offset', 'line'], :grouping_fields => ['line']
     end
   end
 end

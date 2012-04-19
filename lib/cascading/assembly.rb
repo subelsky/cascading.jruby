@@ -55,24 +55,17 @@ module Cascading
       @outgoing_scopes[name] = Scope.outgoing_scope(@tail_pipe, incoming_scopes)
     end
 
-    def do_every_block_and_rename_fields(group_by, &block)
-      instance_eval &block if block_given?
+    def do_every_block_and_rename_fields(&block)
+      return unless block_given?
+      instance_eval &block
 
       # "Fix" out values fields after a sequence of Everies.  This is a field
       # name metadata fix which is why the Identity is not planned into the
       # resulting Cascading pipe.  Without it, all values fields would
       # propagate through group_by or joins and unions with blocks, which
       # doesn't match Cascading's planner's behavior.
-      if block_given?
-        discard_each = Java::CascadingPipe::Each.new(@tail_pipe, all_fields, Java::CascadingOperation::Identity.new)
-        @outgoing_scopes[name] = Scope.outgoing_scope(discard_each, [scope])
-      elsif group_by && !block_given?
-        # Note for blockless group_by, all_fields refers to all out values
-        # fields before the group_by, so we must explicitly override with our
-        # field name metadata.
-        discard_each = Java::CascadingPipe::Each.new(@tail_pipe, scope.grouping_fields, Java::CascadingOperation::Identity.new)
-        @outgoing_scopes[name] = Scope.outgoing_scope(discard_each, [scope])
-      end
+      discard_each = Java::CascadingPipe::Each.new(@tail_pipe, all_fields, Java::CascadingOperation::Identity.new)
+      @outgoing_scopes[name] = Scope.outgoing_scope(discard_each, [scope])
     end
 
     def to_s
@@ -153,7 +146,7 @@ module Cascading
         joiner
       ]
       make_pipe(Java::CascadingPipe::CoGroup, parameters, incoming_scopes)
-      do_every_block_and_rename_fields(false, &block)
+      do_every_block_and_rename_fields(&block)
     end
     alias co_group join
 
@@ -204,7 +197,7 @@ module Cascading
 
       parameters = [@tail_pipe, group_fields, sort_fields, reverse].compact
       make_pipe(Java::CascadingPipe::GroupBy, parameters)
-      do_every_block_and_rename_fields(true, &block)
+      do_every_block_and_rename_fields(&block)
     end
 
     # Unifies several pipes sharing the same field structure.
@@ -226,7 +219,7 @@ module Cascading
       # block to union_pipes and we should parameterize it such that the caller
       # can determine which field is grouped upon so that they can select a
       # field with many unique values.
-      #do_every_block_and_rename_fields(false, &block)
+      #do_every_block_and_rename_fields(&block)
     end
 
     # Builds an basic _every_ pipe, and adds it to the current assembly.

@@ -99,36 +99,52 @@ class TC_Assembly < Test::Unit::TestCase
   end
 
   def test_create_group_by
+    group_by_scope = nil
     assembly = mock_assembly do
       group_by 'line'
+      group_by_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
     grouping_fields = assembly.tail_pipe.key_selectors['test']
     assert_equal ['line'], grouping_fields.to_a
 
+    assert_equal ['offset', 'line'], group_by_scope.values_fields.to_a
+    assert_equal ['line'], group_by_scope.grouping_fields.to_a
+
     assembly = mock_assembly do
       group_by 'line'
+      group_by_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
     grouping_fields = assembly.tail_pipe.key_selectors['test']
     assert_equal ['line'], grouping_fields.to_a
+
+    assert_equal ['offset', 'line'], group_by_scope.values_fields.to_a
+    assert_equal ['line'], group_by_scope.grouping_fields.to_a
   end
 
   def test_create_group_by_many_fields
+    group_by_scope = nil
     assembly = mock_assembly do
       group_by 'offset', 'line'
+      group_by_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
     grouping_fields = assembly.tail_pipe.key_selectors['test']
     assert_equal ['offset', 'line'], grouping_fields.to_a
+
+    assert_equal ['offset', 'line'], group_by_scope.values_fields.to_a
+    assert_equal ['offset', 'line'], group_by_scope.grouping_fields.to_a
   end
 
   def test_create_group_by_with_sort
+    group_by_scope = nil
     assembly = mock_assembly do
       group_by 'offset', 'line', :sort_by => 'line'
+      group_by_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -140,11 +156,16 @@ class TC_Assembly < Test::Unit::TestCase
 
     assert_equal ['offset', 'line'], grouping_fields.to_a
     assert_equal ['line'], sorting_fields.to_a
+
+    assert_equal ['offset', 'line'], group_by_scope.values_fields.to_a
+    assert_equal ['offset', 'line'], group_by_scope.grouping_fields.to_a
   end
 
   def test_create_group_by_with_sort_reverse
+    group_by_scope = nil
     assembly = mock_assembly do
       group_by 'offset', 'line', :sort_by => 'line', :reverse => true
+      group_by_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -156,11 +177,16 @@ class TC_Assembly < Test::Unit::TestCase
 
     assert_equal ['offset', 'line'], grouping_fields.to_a
     assert_equal ['line'], sorting_fields.to_a
+
+    assert_equal ['offset', 'line'], group_by_scope.values_fields.to_a
+    assert_equal ['offset', 'line'], group_by_scope.grouping_fields.to_a
   end
 
   def test_create_group_by_reverse
+    group_by_scope = nil
     assembly = mock_assembly do
       group_by 'offset', 'line', :reverse => true
+      group_by_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -172,6 +198,9 @@ class TC_Assembly < Test::Unit::TestCase
 
     assert_equal ['offset', 'line'], grouping_fields.to_a
     assert_nil sorting_fields
+
+    assert_equal ['offset', 'line'], group_by_scope.values_fields.to_a
+    assert_equal ['offset', 'line'], group_by_scope.grouping_fields.to_a
   end
 
   def test_branch_unique
