@@ -2,6 +2,22 @@ require 'test/unit'
 require 'cascading'
 
 class TC_LocalExecution < Test::Unit::TestCase
+  def test_smoke_test_multi_source_tap
+    cascade 'splitter' do
+      flow 'splitter' do
+        tap1 = tap 'test/data/data1.txt'
+        tap2 = tap 'test/data/data2.txt'
+        source 'data', multi_source_tap(tap1, tap2)
+
+        assembly 'data' do
+          pass
+        end
+
+        sink 'data', tap('output/test_smoke_test_multi_source_tap')
+      end
+    end.complete
+  end
+
   def test_smoke_test_sequence_file_scheme
     cascade 'smoke' do
       flow 'smoke' do
