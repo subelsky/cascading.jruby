@@ -18,6 +18,7 @@ end
 ensure_in_path 'lib'
 
 require 'cascading'
+require 'bundler/setup'
 
 task :default => 'test:run'
 

@@ -2,13 +2,17 @@
 
 Some hacking info on `cascading.jruby`:
 
-`cascading.jruby` can be packaged as a gem. To do so, you must generate the necessary packaging files:
+For local development, install with (requires [bundler](http://gembundler.com/)):
 
-    jruby -S rake gem
+    bundle install
 
-will produce the gem in the pkg/ sub-directory. After that, just cd to this directory and:
+To create the gem:
 
-    jruby -S rake install cascading.jruby-xxx.gem
+    jruby -S bundle exec rake gem
+
+To install it locally:
+
+    jruby -S gem install pkg/cascading.jruby-xxx.gem
 
 The `Cascading::Operations` module is mixed-in the `Cascading::Assembly` class to provide some shortcuts for common operations.
 
