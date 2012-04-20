@@ -234,6 +234,19 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['offset', 'line'], assembly.scope.grouping_fields.to_a
   end
 
+  def test_group_by_with_block
+    assembly = mock_assembly do
+      group_by 'line' do
+        count
+      end
+    end
+
+    assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
+
+    assert_equal ['line', 'count'], assembly.scope.values_fields.to_a
+    assert_equal ['line', 'count'], assembly.scope.grouping_fields.to_a
+  end
+
   def test_create_union
     assembly = mock_branched_assembly do
       union 'test1', 'test2', :on => 'line'
@@ -363,6 +376,19 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['offset', 'line'], assembly.scope.grouping_fields.to_a
   end
 
+  def test_union_with_block
+    assembly = mock_branched_assembly do
+      union 'test1', 'test2', :on => 'line' do
+        count
+      end
+    end
+
+    assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
+
+    assert_equal ['line', 'count'], assembly.scope.values_fields.to_a
+    assert_equal ['line', 'count'], assembly.scope.grouping_fields.to_a
+  end
+
   def test_union_undefined_inputs
     assert_raise RuntimeError, "Could not find assembly 'doesnotexist' in union" do
       flow 'test_union_undefined_inputs' do
@@ -441,6 +467,19 @@ class TC_Assembly < Test::Unit::TestCase
 
     assert_equal ['a', 'b', 'c', 'd', 'e', 'f', 'g'], assembly.scope.values_fields.to_a
     assert_equal ['name'], assembly.scope.grouping_fields.to_a
+  end
+
+  def test_join_with_block
+    assembly = mock_two_input_assembly do
+      join 'test1', 'test2', :on => 'name' do
+        count
+      end
+    end
+
+    assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
+
+    assert_equal ['name', 'count'], assembly.scope.values_fields.to_a
+    assert_equal ['name', 'count'], assembly.scope.grouping_fields.to_a
   end
 
   def test_join_undefined_inputs
