@@ -141,52 +141,45 @@ class TC_Assembly < Test::Unit::TestCase
   end
 
   def test_create_group_by
-    group_by_scope = nil
     assembly = mock_assembly do
       group_by 'line'
-      group_by_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
     grouping_fields = assembly.tail_pipe.key_selectors['test']
     assert_equal ['line'], grouping_fields.to_a
 
-    assert_equal ['offset', 'line'], group_by_scope.values_fields.to_a
-    assert_equal ['line'], group_by_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['line'], assembly.scope.grouping_fields.to_a
 
     assembly = mock_assembly do
       group_by 'offset'
-      group_by_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
     grouping_fields = assembly.tail_pipe.key_selectors['test']
     assert_equal ['offset'], grouping_fields.to_a
 
-    assert_equal ['offset', 'line'], group_by_scope.values_fields.to_a
-    assert_equal ['offset'], group_by_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['offset'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_group_by_many_fields
-    group_by_scope = nil
     assembly = mock_assembly do
       group_by 'offset', 'line'
-      group_by_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
     grouping_fields = assembly.tail_pipe.key_selectors['test']
     assert_equal ['offset', 'line'], grouping_fields.to_a
 
-    assert_equal ['offset', 'line'], group_by_scope.values_fields.to_a
-    assert_equal ['offset', 'line'], group_by_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_group_by_with_sort
-    group_by_scope = nil
     assembly = mock_assembly do
       group_by 'offset', 'line', :sort_by => 'line'
-      group_by_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -199,15 +192,13 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['offset', 'line'], grouping_fields.to_a
     assert_equal ['line'], sorting_fields.to_a
 
-    assert_equal ['offset', 'line'], group_by_scope.values_fields.to_a
-    assert_equal ['offset', 'line'], group_by_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_group_by_with_sort_reverse
-    group_by_scope = nil
     assembly = mock_assembly do
       group_by 'offset', 'line', :sort_by => 'line', :reverse => true
-      group_by_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -220,15 +211,13 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['offset', 'line'], grouping_fields.to_a
     assert_equal ['line'], sorting_fields.to_a
 
-    assert_equal ['offset', 'line'], group_by_scope.values_fields.to_a
-    assert_equal ['offset', 'line'], group_by_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_group_by_reverse
-    group_by_scope = nil
     assembly = mock_assembly do
       group_by 'offset', 'line', :reverse => true
-      group_by_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -241,15 +230,13 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['offset', 'line'], grouping_fields.to_a
     assert_nil sorting_fields
 
-    assert_equal ['offset', 'line'], group_by_scope.values_fields.to_a
-    assert_equal ['offset', 'line'], group_by_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_union
-    union_scope = nil
     assembly = mock_branched_assembly do
       union 'test1', 'test2', :on => 'line'
-      union_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -260,12 +247,11 @@ class TC_Assembly < Test::Unit::TestCase
     right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
     assert_equal ['line'], right_grouping_fields.to_a
 
-    assert_equal ['offset', 'line'], union_scope.values_fields.to_a
-    assert_equal ['line'], union_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['line'], assembly.scope.grouping_fields.to_a
 
     assembly = mock_branched_assembly do
       union 'test1', 'test2', :on => 'offset'
-      union_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -274,12 +260,11 @@ class TC_Assembly < Test::Unit::TestCase
     right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
     assert_equal ['offset'], right_grouping_fields.to_a
 
-    assert_equal ['offset', 'line'], union_scope.values_fields.to_a
-    assert_equal ['offset'], union_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['offset'], assembly.scope.grouping_fields.to_a
 
     assembly = mock_branched_assembly do
       union 'test1', 'test2'
-      union_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -288,15 +273,13 @@ class TC_Assembly < Test::Unit::TestCase
     right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
     assert_equal ['offset'], right_grouping_fields.to_a
 
-    assert_equal ['offset', 'line'], union_scope.values_fields.to_a
-    assert_equal ['offset'], union_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['offset'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_union_many_fields
-    union_scope = nil
     assembly = mock_branched_assembly do
       union 'test1', 'test2', :on => ['offset', 'line']
-      union_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -307,15 +290,13 @@ class TC_Assembly < Test::Unit::TestCase
     right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
     assert_equal ['offset', 'line'], right_grouping_fields.to_a
 
-    assert_equal ['offset', 'line'], union_scope.values_fields.to_a
-    assert_equal ['offset', 'line'], union_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_union_with_sort
-    union_scope = nil
     assembly = mock_branched_assembly do
       union 'test1', 'test2', :on => ['offset', 'line'], :sort_by => 'line'
-      union_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -332,15 +313,13 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['line'], left_sorting_fields.to_a
     assert_equal ['line'], right_sorting_fields.to_a
 
-    assert_equal ['offset', 'line'], union_scope.values_fields.to_a
-    assert_equal ['offset', 'line'], union_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_union_with_sort_reverse
-    union_scope = nil
     assembly = mock_branched_assembly do
       union 'test1', 'test2', :on => ['offset', 'line'], :sort_by => 'line', :reverse => true
-      union_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -357,15 +336,13 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['line'], left_sorting_fields.to_a
     assert_equal ['line'], right_sorting_fields.to_a
 
-    assert_equal ['offset', 'line'], union_scope.values_fields.to_a
-    assert_equal ['offset', 'line'], union_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_union_reverse
-    union_scope = nil
     assembly = mock_branched_assembly do
       union 'test1', 'test2', :on => ['offset', 'line'], :reverse => true
-      union_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::GroupBy
@@ -382,8 +359,8 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['offset', 'line'], left_sorting_fields.to_a # FIXME: Missing constructor in wip-255
     assert_equal ['offset', 'line'], right_sorting_fields.to_a # FIXME: Missing constructor in wip-255
 
-    assert_equal ['offset', 'line'], union_scope.values_fields.to_a
-    assert_equal ['offset', 'line'], union_scope.grouping_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.values_fields.to_a
+    assert_equal ['offset', 'line'], assembly.scope.grouping_fields.to_a
   end
 
   def test_union_undefined_inputs
@@ -405,10 +382,8 @@ class TC_Assembly < Test::Unit::TestCase
   end
 
   def test_create_join
-    join_scope = nil
     assembly = mock_two_input_assembly do
       join 'test1', 'test2', :on => 'name'
-      join_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::CoGroup
@@ -419,12 +394,11 @@ class TC_Assembly < Test::Unit::TestCase
     right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
     assert_equal ['name'], right_grouping_fields.to_a
 
-    assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], join_scope.values_fields.to_a
-    assert_equal ['name'], join_scope.grouping_fields.to_a
+    assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], assembly.scope.values_fields.to_a
+    assert_equal ['name'], assembly.scope.grouping_fields.to_a
 
     assembly = mock_two_input_assembly do
       join 'test1', 'test2', :on => 'id'
-      join_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::CoGroup
@@ -433,15 +407,13 @@ class TC_Assembly < Test::Unit::TestCase
     right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
     assert_equal ['id'], right_grouping_fields.to_a
 
-    assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], join_scope.values_fields.to_a
-    assert_equal ['id'], join_scope.grouping_fields.to_a
+    assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], assembly.scope.values_fields.to_a
+    assert_equal ['id'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_join_many_fields
-    join_scope = nil
     assembly = mock_two_input_assembly do
       join 'test1', 'test2', :on => ['name', 'id']
-      join_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::CoGroup
@@ -450,15 +422,13 @@ class TC_Assembly < Test::Unit::TestCase
     right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
     assert_equal ['name', 'id'], right_grouping_fields.to_a
 
-    assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], join_scope.values_fields.to_a
-    assert_equal ['name', 'id'], join_scope.grouping_fields.to_a
+    assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], assembly.scope.values_fields.to_a
+    assert_equal ['name', 'id'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_join_with_declared_fields
-    join_scope = nil
     assembly = mock_two_input_assembly do
       join 'test1', 'test2', :on => 'name', :declared_fields => ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-      join_scope = scope
     end
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::CoGroup
@@ -469,8 +439,8 @@ class TC_Assembly < Test::Unit::TestCase
     right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
     assert_equal ['name'], right_grouping_fields.to_a
 
-    assert_equal ['a', 'b', 'c', 'd', 'e', 'f', 'g'], join_scope.values_fields.to_a
-    assert_equal ['name'], join_scope.grouping_fields.to_a
+    assert_equal ['a', 'b', 'c', 'd', 'e', 'f', 'g'], assembly.scope.values_fields.to_a
+    assert_equal ['name'], assembly.scope.grouping_fields.to_a
   end
 
   def test_join_undefined_inputs
