@@ -1,4 +1,4 @@
-# Cascading.JRuby
+# Cascading.JRuby [![Build Status](https://secure.travis-ci.org/[mrwalker]/[cascading.jruby].png)](http://travis-ci.org/[mrwalker]/[cascading.jruby])
 
 `cascading.jruby` is a small DSL above [Cascading](http://www.cascading.org/).
 
