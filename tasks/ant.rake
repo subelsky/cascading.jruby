@@ -1,14 +1,18 @@
 namespace :ant do
+  desc 'Retrieves Cascading and Hadoop jars and sets environment variables to point to them'
+  task :retrieve do
+    raise 'Ant retrieve failed' unless system('ant init')
+    ENV['CASCADING_HOME'] = 'build/lib'
+    ENV['HADOOP_HOME'] = 'build/lib'
+  end
+
   desc 'Builds Java source for inclusion in gem'
   task :build do
-    stdout = `ant build`
-    raise "Ant build failed: #{stdout}" unless $? == 0
-    puts stdout
+    raise 'Ant build failed' unless system('ant build')
   end
 
   desc 'Cleans Java build files'
   task :clean do
-    stdout = `ant clean`
-    puts stdout
+    system('ant clean')
   end
 end

@@ -33,7 +33,7 @@ namespace :test do
 end  # namespace :test
 
 desc 'Alias to test:run'
-task :test => 'test:run'
+task :test => ['ant:retrieve', 'test:run']
 
 task :clobber => 'test:clobber_rcov' if HAVE_RCOV
 

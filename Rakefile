@@ -20,7 +20,7 @@ ensure_in_path 'lib'
 require 'cascading'
 require 'bundler/setup'
 
-task :default => 'test:run'
+task :default => 'test'
 
 task :run do
   # ensure_in_path "samples"

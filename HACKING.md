@@ -6,6 +6,10 @@ For local development, install with (requires [bundler](http://gembundler.com/))
 
     bundle install
 
+To run the tests (will download Cascading and Hadoop jars):
+
+    jruby -S bundle exec rake
+
 To create the gem:
 
     jruby -S bundle exec rake gem
