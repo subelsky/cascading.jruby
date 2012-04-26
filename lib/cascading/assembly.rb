@@ -11,7 +11,7 @@ module Cascading
   class Assembly < Cascading::Node
     include Operations
 
-    attr_accessor :head_pipe, :tail_pipe, :incoming_scopes, :outgoing_scopes
+    attr_reader :head_pipe, :tail_pipe, :incoming_scopes, :outgoing_scopes
 
     def initialize(name, parent, outgoing_scopes = {})
       super(name, parent)
@@ -20,13 +20,13 @@ module Cascading
       if parent.kind_of?(Assembly)
         @head_pipe = Java::CascadingPipe::Pipe.new(name, parent.tail_pipe)
         # Copy to allow destructive update of name
-        @outgoing_scopes[name] = parent.scope.copy
+        outgoing_scopes[name] = parent.scope.copy
         scope.scope.name = name
       else # Parent is a Flow
         @head_pipe = Java::CascadingPipe::Pipe.new(name)
-        @outgoing_scopes[name] ||= Scope.empty_scope(name)
+        outgoing_scopes[name] ||= Scope.empty_scope(name)
       end
-      @tail_pipe = @head_pipe
+      @tail_pipe = head_pipe
       @incoming_scopes = [scope]
     end
 
@@ -44,7 +44,7 @@ module Cascading
     end
 
     def scope
-      @outgoing_scopes[name]
+      outgoing_scopes[name]
     end
 
     def debug_scope
@@ -53,22 +53,24 @@ module Cascading
 
     def make_pipe(type, parameters, incoming_scopes = [scope])
       @tail_pipe = type.new(*parameters)
-      @outgoing_scopes[name] = Scope.outgoing_scope(@tail_pipe, incoming_scopes)
+      outgoing_scopes[name] = Scope.outgoing_scope(tail_pipe, incoming_scopes)
     end
+    private :make_pipe
 
-    def do_every_block_and_rename_fields(&block)
+    def apply_aggregations(&block)
       return unless block_given?
 
       aggregations = Aggregations.new(self)
       aggregations.instance_eval(&block)
       aggregations.finalize
 
-      self.tail_pipe = aggregations.tail_pipe
-      self.outgoing_scopes[name] = aggregations.scope
+      @tail_pipe = aggregations.tail_pipe
+      outgoing_scopes[name] = aggregations.scope
     end
+    private :apply_aggregations
 
     def to_s
-      "#{name} : head pipe : #{@head_pipe} - tail pipe: #{@tail_pipe}"
+      "#{name} : head pipe : #{head_pipe} - tail pipe: #{tail_pipe}"
     end
 
     # Builds a join (CoGroup) pipe. Requires a list of assembly names to join
@@ -82,7 +84,7 @@ module Cascading
         raise "Could not find assembly '#{assembly_name}' in join" unless assembly
 
         pipes << assembly.tail_pipe
-        incoming_scopes << @outgoing_scopes[assembly.name]
+        incoming_scopes << outgoing_scopes[assembly.name]
       end
 
       group_fields_args = options[:on]
@@ -106,7 +108,7 @@ module Cascading
           raise "Could not find assembly '#{assembly_name}' in join" unless assembly
 
           pipes << assembly.tail_pipe
-          incoming_scopes << @outgoing_scopes[assembly.name]
+          incoming_scopes << outgoing_scopes[assembly.name]
           group_fields << fields(v)
         end
       else
@@ -149,7 +151,7 @@ module Cascading
         joiner
       ]
       make_pipe(Java::CascadingPipe::CoGroup, parameters, incoming_scopes)
-      do_every_block_and_rename_fields(&block)
+      apply_aggregations(&block)
     end
     alias co_group join
 
@@ -184,7 +186,7 @@ module Cascading
     # Builds a new branch.
     def branch(name, &block)
       raise "Could not build branch '#{name}'; block required" unless block_given?
-      assembly = Assembly.new(name, self, @outgoing_scopes)
+      assembly = Assembly.new(name, self, outgoing_scopes)
       add_child(assembly)
       assembly.instance_eval(&block)
       assembly
@@ -198,9 +200,9 @@ module Cascading
       sort_fields = fields(options[:sort_by])
       reverse = options[:reverse]
 
-      parameters = [@tail_pipe, group_fields, sort_fields, reverse].compact
+      parameters = [tail_pipe, group_fields, sort_fields, reverse].compact
       make_pipe(Java::CascadingPipe::GroupBy, parameters)
-      do_every_block_and_rename_fields(&block)
+      apply_aggregations(&block)
     end
 
     # Unifies multiple incoming pipes sharing the same field structure using a
@@ -221,7 +223,7 @@ module Cascading
         raise "Could not find assembly '#{assembly_name}' in union" unless assembly
 
         pipes << assembly.tail_pipe
-        incoming_scopes << @outgoing_scopes[assembly.name]
+        incoming_scopes << outgoing_scopes[assembly.name]
       end
 
       # Must provide group_fields to ensure field name propagation
@@ -232,7 +234,7 @@ module Cascading
 
       parameters = [pipes.to_java(Java::CascadingPipe::Pipe), group_fields, sort_fields, reverse].compact
       make_pipe(Java::CascadingPipe::GroupBy, parameters, incoming_scopes)
-      do_every_block_and_rename_fields(&block)
+      apply_aggregations(&block)
     end
     alias :union_pipes :union
 
@@ -249,14 +251,14 @@ module Cascading
     def sub_assembly(sub_assembly)
       raise 'SubAssembly must call setTails in constructor' unless sub_assembly.tails
       raise 'SubAssembly must set exactly 1 tail in constructor' unless sub_assembly.tails.size == 1
-      old_tail = @tail_pipe
+      old_tail = tail_pipe
       @tail_pipe = sub_assembly.tails.first
 
-      path = path(old_tail, @tail_pipe)
+      path = path(old_tail, tail_pipe)
       puts path.join(',')
 
       path.each do |pipe|
-        @outgoing_scopes[name] = Scope.outgoing_scope(pipe, [scope])
+        outgoing_scopes[name] = Scope.outgoing_scope(pipe, [scope])
       end
     end
 
@@ -282,7 +284,7 @@ module Cascading
       out_fields = fields(options[:output])
       operation = options[:filter] || options[:function]
 
-      parameters = [@tail_pipe, in_fields, operation, out_fields].compact
+      parameters = [tail_pipe, in_fields, operation, out_fields].compact
       make_pipe(Java::CascadingPipe::Each, parameters)
     end
 
@@ -341,7 +343,7 @@ module Cascading
       options = args.extract_options!
       assertion = args[0]
       assertion_level = options[:level] || Java::CascadingOperation::AssertionLevel::STRICT
-      parameters = [@tail_pipe, assertion_level, assertion]
+      parameters = [tail_pipe, assertion_level, assertion]
       make_pipe(Java::CascadingPipe::Each, parameters)
     end
 
