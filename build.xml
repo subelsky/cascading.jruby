@@ -2,7 +2,10 @@
 <project name="cascading.jruby" default="build" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" xmlns="antlib:org.apache.tools.ant">
   <property environment="env" />
   <property file="${basedir}/build.properties" />
-  <property file="${basedir}/version.properties" />
+
+  <!-- Be careful setting this property.  Doing so means you've already downloaded
+       Ivy and resolved, cached, and retrieved this project's dependencies. -->
+  <property name="offline" value="false" />
 
   <property name="src.jruby" location="${basedir}/lib" />
   <property name="src.java" location="${basedir}/src" />
@@ -18,14 +21,14 @@
   <property name="ivy.jar.dir" value="${ivy.home}/lib" />
   <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
 
-  <target name="download-ivy" unless="offline">
+  <target name="download-ivy" unless="${offline}">
     <mkdir dir="${ivy.jar.dir}"/>
     <get
       src="http://repo2.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" 
       dest="${ivy.jar.file}" usetimestamp="true"/>
   </target>
 
-  <target name="init-ivy" depends="download-ivy" unless="offline">
+  <target name="init-ivy" depends="download-ivy" unless="${offline}">
     <path id="ivy.lib.path">
       <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
     </path>
@@ -34,19 +37,17 @@
     <ivy:settings file="${basedir}/ivysettings.xml" />
   </target>
 
+  <target name="retrieve" depends="init-ivy" unless="${offline}">
+    <ivy:retrieve pattern="${build.lib}/[artifact]-[revision].[ext]" conf="*" />
+  </target>
+
   <path id="project.class.path">
     <fileset dir="${build.lib}">
       <include name="*.jar" />
     </fileset>
   </path>
 
-  <target name="init" depends="init-ivy" unless="offline">
-    <mkdir dir="${build.classes}" />
-    <ivy:retrieve pattern="${build.lib}/[artifact]-[revision].[ext]" conf="*" />
-    <property name="CLASSPATH" refid="project.class.path" />
-  </target>
-
-  <target name="build" depends="init">
+  <target name="build" depends="retrieve">
     <javac srcdir="${src.java}" destdir="${build.classes}" debug="${javac.debug}" includeantruntime="false">
       <classpath refid="project.class.path" />
     </javac>
