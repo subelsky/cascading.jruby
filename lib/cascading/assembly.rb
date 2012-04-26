@@ -4,6 +4,7 @@
 
 require 'cascading/base'
 require 'cascading/operations'
+require 'cascading/aggregations'
 require 'cascading/ext/array'
 
 module Cascading
@@ -57,15 +58,13 @@ module Cascading
 
     def do_every_block_and_rename_fields(&block)
       return unless block_given?
-      instance_eval &block
 
-      # "Fix" out values fields after a sequence of Everies.  This is a field
-      # name metadata fix which is why the Identity is not planned into the
-      # resulting Cascading pipe.  Without it, all values fields would
-      # propagate through group_by or joins and unions with blocks, which
-      # doesn't match Cascading's planner's behavior.
-      discard_each = Java::CascadingPipe::Each.new(@tail_pipe, all_fields, Java::CascadingOperation::Identity.new)
-      @outgoing_scopes[name] = Scope.outgoing_scope(discard_each, [scope])
+      aggregations = Aggregations.new(self)
+      aggregations.instance_eval(&block)
+      aggregations.finalize
+
+      self.tail_pipe = aggregations.tail_pipe
+      self.outgoing_scopes[name] = aggregations.scope
     end
 
     def to_s
@@ -270,18 +269,6 @@ module Cascading
     end
     private :path
 
-    # Builds an basic _every_ pipe, and adds it to the current assembly.
-    def every(*args)
-      options = args.extract_options!
-
-      in_fields = fields(args)
-      out_fields = fields(options[:output])
-      operation = options[:aggregator] || options[:buffer]
-
-      parameters = [@tail_pipe, in_fields, operation, out_fields].compact
-      make_pipe(Java::CascadingPipe::Every, parameters)
-    end
-
     # Builds a basic _each_ pipe, and adds it to the current assembly.
     # --
     # Example:
@@ -358,14 +345,6 @@ module Cascading
       make_pipe(Java::CascadingPipe::Each, parameters)
     end
 
-    def assert_group(*args)
-      options = args.extract_options!
-      assertion = args[0]
-      assertion_level = options[:level] || Java::CascadingOperation::AssertionLevel::STRICT
-      parameters = [@tail_pipe, assertion_level, assertion]
-      make_pipe(Java::CascadingPipe::Every, parameters)
-    end
-
     # Builds a debugging pipe.
     #
     # Without arguments, it generate a simple debug pipe, that prints all tuple to the standard
@@ -398,67 +377,6 @@ module Cascading
       options = args.extract_options!
       assertion = Java::CascadingOperationAssertion::AssertNotNull.new
       assert(assertion, options)
-    end
-
-    def assert_group_size_equals(*args)
-      options = args.extract_options!
-      assertion = Java::CascadingOperationAssertion::AssertGroupSizeEquals.new(args[0])
-      assert_group(assertion, options)
-    end
-
-    # Builds a series of every pipes for aggregation.
-    #
-    # Args can either be a list of fields to aggregate and an options hash or
-    # a hash that maps input field name to output field name (similar to
-    # insert) and an options hash.
-    #
-    # Options include:
-    #   * <tt>:ignore</tt> a Java Array of Objects (for min and max) or Tuples
-    #     (for first and last) of values for the aggregator to ignore
-    #
-    # <tt>function</tt> is a symbol that is the method to call to construct the Cascading Aggregator.
-    def composite_aggregator(args, function)
-      if !args.empty? && args.first.kind_of?(Hash)
-        field_map = args.shift.sort
-        options = args.extract_options!
-      else
-        options = args.extract_options!
-        field_map = args.zip(args)
-      end
-      field_map.each do |in_field, out_field|
-        agg = self.send(function, out_field, options)
-        every(in_field, :aggregator => agg, :output => all_fields)
-      end
-      puts "WARNING: composite aggregator '#{function.to_s.gsub('_function', '')}' invoked on 0 fields; will be ignored" if field_map.empty?
-    end
-
-    def min(*args); composite_aggregator(args, :min_function); end
-    def max(*args); composite_aggregator(args, :max_function); end
-    def first(*args); composite_aggregator(args, :first_function); end
-    def last(*args); composite_aggregator(args, :last_function); end
-    def average(*args); composite_aggregator(args, :average_function); end
-
-    # Counts elements of a group.  First unnamed parameter is the name of the
-    # output count field (defaults to 'count' if it is not provided).
-    def count(*args)
-      options = args.extract_options!
-      name = args[0] || 'count'
-      every(last_grouping_fields, :aggregator => count_function(name, options), :output => all_fields)
-    end
-
-    # Fields to be summed may either be provided as an array, in which case
-    # they will be aggregated into the same field in the given order, or as a
-    # hash, in which case they will be aggregated from the field named by the
-    # key into the field named by the value after being sorted.
-    def sum(*args)
-      options = args.extract_options!
-      type = JAVA_TYPE_MAP[options[:type]]
-      raise "No type specified for sum" unless type
-
-      mapping = options[:mapping] ? options[:mapping].sort : args.zip(args)
-      mapping.each do |in_field, out_field|
-        every(in_field, :aggregator => sum_function(out_field, :type => type), :output => all_fields)
-      end
     end
 
     # Builds a _parse_ pipe. This pipe will parse the fields specified in input (first unamed arguments),

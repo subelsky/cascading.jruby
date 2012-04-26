@@ -103,41 +103,36 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['offset_copy'], pipe.output_selector.to_a
   end
 
-  # For now, replaced these tests with the trivial observation that you can't
-  # follow a Tap with an Every.  Eventually, should support testing within a
-  # group_by block.
-  def test_create_every
-    assert_raise CascadingException do
+  def test_every_cannot_follow_tap
+    # Assembly#every is no longer defined; instead, it has moved to
+    # Aggregations#every
+    assert_raise NoMethodError do
       assembly = mock_assembly do
         every :aggregator => count_function
       end
       pipe = assembly.tail_pipe
       assert pipe.is_a? Java::CascadingPipe::Every
     end
+  end
 
-    assert_raise CascadingException do
+  def test_create_every
       assembly = mock_assembly do
-        every :aggregator => count_function('field1', 'field2')
-      end
-      assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
-    end
-
-    assert_raise CascadingException do
-      assembly = mock_assembly do
-        every 'field1', :aggregator => count_function
-      end
-      assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
-      assert_equal ['field1'], assembly.tail_pipe.argument_selector.to_a
-    end
-
-    assert_raise CascadingException do
-      assembly = mock_assembly do
-        every 'line', :aggregator => count_function, :output=>'line_count'
+        group_by 'line' do
+          every 'line', :aggregator => count_function('count'), :output => 'count'
+        end
       end
       assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
       assert_equal ['line'], assembly.tail_pipe.argument_selector.to_a
-      assert_equal ['line_count'], assembly.tail_pipe.output_selector.to_a
-    end
+      assert_equal ['count'], assembly.tail_pipe.output_selector.to_a
+
+      assembly = mock_assembly do
+        group_by 'line' do
+          count
+        end
+      end
+      assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
+      assert_equal last_grouping_fields, assembly.tail_pipe.argument_selector
+      assert_equal all_fields, assembly.tail_pipe.output_selector
   end
 
   def test_create_group_by
@@ -570,7 +565,9 @@ class TC_Assembly < Test::Unit::TestCase
   end
 
   def test_full_assembly
-    assert_raise CascadingException do
+    # Assembly#every is no longer defined; instead, it is located at
+    # Aggregations#every
+    assert_raise NoMethodError do
       assembly = mock_assembly do
         each('offset', :output => 'offset_copy',
              :filter => Java::CascadingOperation::Identity.new(fields('offset_copy')))
@@ -649,7 +646,12 @@ class TC_Assembly < Test::Unit::TestCase
       flow 'smoke' do
         source 'input', tap('test/data/data1.txt')
         assembly 'input' do
-          pass
+          debug_scope
+          group_by 'line' do
+            count
+            sum 'offset', :type => :long
+            debug_scope
+          end
           debug_scope
         end
         sink 'input', tap('output/test_smoke_test_debug_scope')

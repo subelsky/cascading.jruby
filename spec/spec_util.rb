@@ -19,6 +19,7 @@ end
 module Cascading
   class Flow; include ScopeTests; end
   class Assembly; include ScopeTests; end
+  class Aggregations; include ScopeTests; end
 end
 
 def test_flow(&block)
@@ -50,6 +51,7 @@ end
 
 def test_join_assembly(params = {}, &block)
   branches = params[:branches] || []
+  post_join_block = params[:post_join_block]
 
   test_flow do
     source 'left', tap('spec/resource/join_input.txt', :kind => :lfs, :scheme => text_line_scheme)
@@ -75,11 +77,9 @@ def test_join_assembly(params = {}, &block)
       # Empty scope because there is no 'join' source or assembly
       check_scope :values_fields => []
 
-      left_join 'left', 'right', :on => ['x']
-      check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
-        :grouping_fields => ['x']
+      left_join 'left', 'right', :on => ['x'], &block
 
-      instance_eval &block
+      instance_eval &post_join_block if post_join_block
     end
 
     sink 'join', tap("#{OUTPUT_DIR}/join_out.txt", :kind => :lfs, :sink_mode => :replace)

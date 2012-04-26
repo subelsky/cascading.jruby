@@ -12,30 +12,6 @@ context Cascading::Scope do
     end
   end
 
-  it 'should match Cascading fields names after CoGroup' do
-    test_join_assembly do
-      # Pass that uses our scope instead of all_fields
-      operation = Java::CascadingOperation::Identity.new 
-      parameters = [tail_pipe, scope.values_fields, operation]
-      make_pipe(Java::CascadingPipe::Each, parameters)
-
-      check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_']
-    end
-  end
-
-  it 'should match Cascading fields names after Every' do
-    test_join_assembly do
-      sum :mapping => {'x' => 'x_sum'}, :type => :int
-
-      # Pass that uses our grouping fields instead of all_fields
-      operation = Java::CascadingOperation::Identity.new 
-      parameters = [tail_pipe, fields(['x', 'x_sum']), operation]
-      make_pipe(Java::CascadingPipe::Each, parameters)
-
-      check_scope :values_fields => ['x', 'x_sum']
-    end
-  end
-
   it 'should pick up names from source tap scheme' do
     test_assembly do
       pass
@@ -68,7 +44,18 @@ context Cascading::Scope do
 
   it 'should propagate names through CoGroup' do
     test_join_assembly do
+      check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
+        :grouping_fields => ['x']
     end
+  end
+
+  it 'should propagate names through CoGroup with no Aggregations' do
+    post_join_block = lambda do
+      check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
+        :grouping_fields => ['x']
+    end
+
+    test_join_assembly(:post_join_block => post_join_block)
   end
 
   it 'should pass grouping fields to Every' do
@@ -95,7 +82,12 @@ context Cascading::Scope do
   end
 
   it 'should propagate names through Every' do
-    test_join_assembly do
+    post_join_block = lambda do
+      check_scope :values_fields => ['x', 'x_sum', 'y_sum']
+      assert_size_equals 3
+    end
+
+    test_join_assembly :post_join_block => post_join_block do
       sum :mapping => {'x' => 'x_sum'}, :type => :int
       check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
         :grouping_fields => ['x', 'x_sum']
@@ -105,60 +97,41 @@ context Cascading::Scope do
       check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
         :grouping_fields => ['x', 'x_sum', 'y_sum']
       assert_group_size_equals 1
-
-      check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
-        :grouping_fields => ['x', 'x_sum', 'y_sum']
-      assert_size_equals 3
-
-      check_scope :values_fields => ['x', 'x_sum', 'y_sum']
     end
   end
 
   it 'should pass values fields to Each immediately following CoGroup and remove grouping fields' do
-    test_join_assembly do
+    post_join_block = lambda do
       assert_size_equals 10
       check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_']
     end
+    test_join_assembly(:post_join_block => post_join_block)
   end
 
   it 'should fail to pass grouping fields to Every immediately following Each' do
+    post_join_block = lambda do
+      pass
+      check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_']
+      sum :mapping => {'x' => 'x_sum'}, :type => :int
+    end
+
     lambda do # Composition fails
-      test_join_assembly do
-        pass
-        check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_']
-        begin
-          sum :mapping => {'x' => 'x_sum'}, :type => :int
-        rescue CascadingException => e
-          raise e.cause
-        end
-      end
-    end.should raise_error java.lang.IllegalStateException, 'Every cannot follow a Tap or an Each'
+      test_join_assembly(:post_join_block => post_join_block)
+    # sum doesn't exist outside of Aggregations (where block of join is
+    # evaluated)
+    end.should raise_error NoMethodError
   end
 
   it 'should propagate values fields and field names into branch' do
-    test_join_assembly(:branches => ['data_tuple']) do
+    post_join_block = lambda do
       branch 'data_tuple' do
         check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
           :grouping_fields => ['x']
         assert_size_equals 10
       end
     end
-  end
 
-  it 'should fail to propagate grouping fields to branch' do
-    lambda do # Execution fails
-      begin
-        test_join_assembly(:branches => ['attempt_group']) do
-          branch 'attempt_group' do
-            check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
-              :grouping_fields => ['x']
-            sum :mapping => {'x' => 'x_sum'}, :type => :int
-          end
-        end
-      rescue CascadingException => e
-        raise e.cause
-      end
-    end.should raise_error Java::CascadingFlowPlanner::PlannerException, "[attempt_group][sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)] Every instances may not split after a GroupBy or CoGroup pipe, found: Every(attempt_group)[Sum[decl:'x_sum'][args:1]] after: CoGroup(left*right)[by:left:[{1}:'x']right:[{1}:'x']]"
+    test_join_assembly(:branches => ['data_tuple'], :post_join_block => post_join_block)
   end
 
   it 'should propagate names through GroupBy' do

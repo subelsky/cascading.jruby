@@ -25,7 +25,7 @@
       dest="${ivy.jar.file}" usetimestamp="true"/>
   </target>
 
-  <target name="init-ivy" depends="download-ivy">
+  <target name="init-ivy" depends="download-ivy" unless="offline">
     <path id="ivy.lib.path">
       <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
     </path>
@@ -40,7 +40,7 @@
     </fileset>
   </path>
 
-  <target name="init" depends="init-ivy">
+  <target name="init" depends="init-ivy" unless="offline">
     <mkdir dir="${build.classes}" />
     <ivy:retrieve pattern="${build.lib}/[artifact]-[revision].[ext]" conf="*" />
     <property name="CLASSPATH" refid="project.class.path" />
