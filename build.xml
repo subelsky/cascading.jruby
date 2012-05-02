@@ -48,6 +48,7 @@
   </path>
 
   <target name="build" depends="retrieve">
+    <mkdir dir="${build.classes}" />
     <javac srcdir="${src.java}" destdir="${build.classes}" debug="${javac.debug}" includeantruntime="false">
       <classpath refid="project.class.path" />
     </javac>
