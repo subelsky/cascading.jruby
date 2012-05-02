@@ -416,7 +416,7 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['name'], right_grouping_fields.to_a
 
     assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], assembly.scope.values_fields.to_a
-    assert_equal ['name'], assembly.scope.grouping_fields.to_a
+    assert_equal ['name', 'name_'], assembly.scope.grouping_fields.to_a
 
     assembly = mock_two_input_assembly do
       join 'test1', 'test2', :on => 'id'
@@ -429,7 +429,7 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['id'], right_grouping_fields.to_a
 
     assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], assembly.scope.values_fields.to_a
-    assert_equal ['id'], assembly.scope.grouping_fields.to_a
+    assert_equal ['id', 'id_'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_join_many_fields
@@ -444,7 +444,7 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['name', 'id'], right_grouping_fields.to_a
 
     assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], assembly.scope.values_fields.to_a
-    assert_equal ['name', 'id'], assembly.scope.grouping_fields.to_a
+    assert_equal ['name', 'id', 'name_', 'id_'], assembly.scope.grouping_fields.to_a
   end
 
   def test_create_join_with_declared_fields
@@ -461,7 +461,7 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['name'], right_grouping_fields.to_a
 
     assert_equal ['a', 'b', 'c', 'd', 'e', 'f', 'g'], assembly.scope.values_fields.to_a
-    assert_equal ['name'], assembly.scope.grouping_fields.to_a
+    assert_equal ['name', 'name_'], assembly.scope.grouping_fields.to_a
   end
 
   def test_join_with_block
@@ -473,8 +473,8 @@ class TC_Assembly < Test::Unit::TestCase
 
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
 
-    assert_equal ['name', 'count'], assembly.scope.values_fields.to_a
-    assert_equal ['name', 'count'], assembly.scope.grouping_fields.to_a
+    assert_equal ['name', 'name_', 'count'], assembly.scope.values_fields.to_a
+    assert_equal ['name', 'name_', 'count'], assembly.scope.grouping_fields.to_a
   end
 
   def test_join_undefined_inputs

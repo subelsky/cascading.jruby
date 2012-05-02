@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2009, Grégoire Marabout. All Rights Reserved.
 #
 # This is free software. Please see the LICENSE and COPYING files for details.
@@ -175,7 +176,7 @@ module Cascading
     job_conf.num_reduce_tasks = 1
 
     properties = java.util.HashMap.new
-    Java::CascadingFlowHadoop::HadoopPlanner.copy_job_conf(properties, job_conf)
+    Java::CascadingFlowHadoopPlanner::HadoopPlanner.copy_job_conf(properties, job_conf)
     properties
   end
 end

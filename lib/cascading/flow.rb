@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2009, Grégoire Marabout. All Rights Reserved.
 #
 # This is free software. Please see the LICENSE and COPYING files for details.
@@ -145,8 +146,8 @@ module Cascading
       end
 
       # FIXME: why do I have to do this in 2.0 wip-255?
-      Java::CascadingFlow::FlowConnector.setApplicationName(properties, name)
-      Java::CascadingFlow::FlowConnector.setApplicationVersion(properties, '0.0.0')
+      Java::CascadingProperty::AppProps.setApplicationName(properties, name)
+      Java::CascadingProperty::AppProps.setApplicationVersion(properties, '0.0.0')
 
       Java::CascadingFlowHadoop::HadoopFlowConnector.new(properties).connect(
         name,

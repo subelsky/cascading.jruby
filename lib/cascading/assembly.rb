@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2009, Grégoire Marabout. All Rights Reserved.
 #
 # This is free software. Please see the LICENSE and COPYING files for details.
@@ -116,7 +117,6 @@ module Cascading
       end
 
       raise 'join requires non-empty :on parameter' if group_fields_args.empty?
-
       group_fields = group_fields.to_java(Java::CascadingTuple::Fields)
       incoming_fields = incoming_scopes.map{ |s| s.values_fields }
       declared_fields = fields(options[:declared_fields] || dedup_fields(*incoming_fields))
@@ -141,8 +141,7 @@ module Cascading
         end
         joiner = Java::CascadingPipeJoiner::MixedJoin.new(joiner.to_java(:boolean))
       end
-
-      result_group_fields = group_fields[0] # Leftmost key group wins
+      result_group_fields = dedup_fields(*group_fields)
       parameters = [
         pipes.to_java(Java::CascadingPipe::Pipe),
         group_fields,

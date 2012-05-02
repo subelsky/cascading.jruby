@@ -95,7 +95,7 @@ class TC_LocalExecution < Test::Unit::TestCase
         sink 'joined', tap('output/test_join1', :sink_mode => :replace)
       end
     end.complete
-    assert_equal ['name', 'id'], join_grouping_fields
+    assert_equal ['name', 'id', 'name_', 'id_'], join_grouping_fields
     assert_equal ['name', 'score1', 'score2', 'id', 'name2', 'id2', 'town'], join_values_fields
   end
 
@@ -123,7 +123,7 @@ class TC_LocalExecution < Test::Unit::TestCase
 
       sink 'joined', tap('output/test_join2', :sink_mode => :replace)
      end.complete
-     assert_equal ['name', 'id'], join_grouping_fields
+     assert_equal ['name', 'id', 'name_', 'code'], join_grouping_fields
      assert_equal ['name', 'score1', 'score2', 'id', 'name2', 'code', 'town'], join_values_fields
    end
 
