@@ -51,18 +51,18 @@ module Cascading
       puts "Current scope for '#{name}':\n  #{scope}\n----------\n"
     end
 
-    def make_pipe(type, parameters, incoming_scopes = [scope])
+    def make_pipe(type, parameters)
       @tail_pipe = type.new(*parameters)
-      outgoing_scopes[name] = Scope.outgoing_scope(tail_pipe, incoming_scopes)
+      outgoing_scopes[name] = Scope.outgoing_scope(tail_pipe, [scope])
     end
     private :make_pipe
 
-    def apply_aggregations(&block)
-      return unless block_given?
-
-      aggregations = Aggregations.new(self)
-      aggregations.instance_eval(&block)
-      aggregations.finalize
+    def apply_aggregations(group, incoming_scopes, &block)
+      aggregations = Aggregations.new(self, group, incoming_scopes)
+      if block_given?
+        aggregations.instance_eval(&block)
+        aggregations.finalize
+      end
 
       @tail_pipe = aggregations.tail_pipe
       outgoing_scopes[name] = aggregations.scope
@@ -150,8 +150,7 @@ module Cascading
         result_group_fields,
         joiner
       ]
-      make_pipe(Java::CascadingPipe::CoGroup, parameters, incoming_scopes)
-      apply_aggregations(&block)
+      apply_aggregations(Java::CascadingPipe::CoGroup.new(*parameters), incoming_scopes, &block)
     end
     alias co_group join
 
@@ -201,8 +200,7 @@ module Cascading
       reverse = options[:reverse]
 
       parameters = [tail_pipe, group_fields, sort_fields, reverse].compact
-      make_pipe(Java::CascadingPipe::GroupBy, parameters)
-      apply_aggregations(&block)
+      apply_aggregations(Java::CascadingPipe::GroupBy.new(*parameters), [scope], &block)
     end
 
     # Unifies multiple incoming pipes sharing the same field structure using a
@@ -233,8 +231,7 @@ module Cascading
       sort_fields = group_fields if !sort_fields && !reverse.nil?
 
       parameters = [pipes.to_java(Java::CascadingPipe::Pipe), group_fields, sort_fields, reverse].compact
-      make_pipe(Java::CascadingPipe::GroupBy, parameters, incoming_scopes)
-      apply_aggregations(&block)
+      apply_aggregations(Java::CascadingPipe::GroupBy.new(*parameters), incoming_scopes, &block)
     end
     alias :union_pipes :union
 
@@ -343,6 +340,7 @@ module Cascading
       options = args.extract_options!
       assertion = args[0]
       assertion_level = options[:level] || Java::CascadingOperation::AssertionLevel::STRICT
+
       parameters = [tail_pipe, assertion_level, assertion]
       make_pipe(Java::CascadingPipe::Each, parameters)
     end

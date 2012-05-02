@@ -4,10 +4,7 @@ context Cascading::Scope do
   it 'should match Cascading fields names from source tap scheme' do
     test_assembly do
       # Pass that uses our scope instead of all_fields
-      operation = Java::CascadingOperation::Identity.new 
-      parameters = [tail_pipe, scope.values_fields, operation]
-      make_pipe(Java::CascadingPipe::Each, parameters)
-
+      each scope.values_fields, :function => Java::CascadingOperation::Identity.new
       check_scope :values_fields => ['offset', 'line']
     end
   end

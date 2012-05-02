@@ -14,16 +14,16 @@ module Cascading
   class Aggregations
     include Operations
 
-    attr_reader :assembly_name, :tail_pipe, :scope
+    attr_reader :assembly, :tail_pipe, :scope
 
-    def initialize(assembly)
-      @assembly_name = assembly.name
-      @tail_pipe = assembly.tail_pipe
-      @scope = assembly.scope
+    def initialize(assembly, group, incoming_scopes)
+      @assembly = assembly
+      @tail_pipe = group
+      @scope = Scope.outgoing_scope(tail_pipe, incoming_scopes)
     end
 
     def debug_scope
-      puts "Current scope of aggregations for '#{assembly_name}':\n  #{scope}\n----------\n"
+      puts "Current scope of aggregations for '#{assembly.name}':\n  #{scope}\n----------\n"
     end
 
     def make_pipe(type, parameters)
