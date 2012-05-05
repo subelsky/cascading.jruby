@@ -30,10 +30,6 @@ module Cascading
       aggregator_klass.new(*parameters)
     end
 
-    def count_function(*args)
-      aggregator_function(args, Java::CascadingOperationAggregator::Count)
-    end
-
     def average_function(*args)
       aggregator_function(args, Java::CascadingOperationAggregator::Average)
     end

@@ -112,12 +112,11 @@ module Cascading
     def last(*args); composite_aggregator(args, :last_function); end
     def average(*args); composite_aggregator(args, :average_function); end
 
-    # Counts elements of a group.  First unnamed parameter is the name of the
-    # output count field (defaults to 'count' if it is not provided).
-    def count(*args)
-      options = args.extract_options!
-      name = args[0] || 'count'
-      every(last_grouping_fields, :aggregator => count_function(name, options), :output => all_fields)
+    # Counts elements of a group.  May optionally specify the name of the
+    # output count field (defaults to 'count').
+    def count(name = 'count')
+      count_aggregator = Java::CascadingOperationAggregator::Count.new(fields(name))
+      every(last_grouping_fields, :aggregator => count_aggregator, :output => all_fields)
     end
 
     # Fields to be summed may either be provided as an array, in which case

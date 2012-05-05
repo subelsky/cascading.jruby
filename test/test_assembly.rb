@@ -104,11 +104,11 @@ class TC_Assembly < Test::Unit::TestCase
   end
 
   def test_every_cannot_follow_tap
-    # Assembly#every is no longer defined; instead, it has moved to
-    # Aggregations#every
-    assert_raise NoMethodError do
+    # Assembly#count is no longer defined; instead, it has moved to
+    # Aggregations#count
+    assert_raise NameError do
       assembly = mock_assembly do
-        every :aggregator => count_function
+        count
       end
       pipe = assembly.tail_pipe
       assert pipe.is_a? Java::CascadingPipe::Every
@@ -118,7 +118,8 @@ class TC_Assembly < Test::Unit::TestCase
   def test_create_every
       assembly = mock_assembly do
         group_by 'line' do
-          every 'line', :aggregator => count_function('count'), :output => 'count'
+          count_aggregator = Java::CascadingOperationAggregator::Count.new(fields('count'))
+          every 'line', :aggregator => count_aggregator, :output => 'count'
         end
       end
       assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
@@ -562,21 +563,6 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal 1, assembly.children.size
     assert_equal 1, assembly.children['branch1'].children.size
     assert_equal 0, assembly.children['branch1'].children['branch2'].children.size
-  end
-
-  def test_full_assembly
-    # Assembly#every is no longer defined; instead, it is located at
-    # Aggregations#every
-    assert_raise NoMethodError do
-      assembly = mock_assembly do
-        each('offset', :output => 'offset_copy',
-             :filter => Java::CascadingOperation::Identity.new(fields('offset_copy')))
-        every(:aggregator => count_function)
-      end
-
-      pipe = assembly.tail_pipe
-      assert pipe.is_a? Java::CascadingPipe::Every
-    end
   end
 
   def test_sub_assembly
