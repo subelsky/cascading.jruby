@@ -119,18 +119,19 @@ module Cascading
       every(last_grouping_fields, :aggregator => count_aggregator, :output => all_fields)
     end
 
-    # Fields to be summed may either be provided as an array, in which case
-    # they will be aggregated into the same field in the given order, or as a
-    # hash, in which case they will be aggregated from the field named by the
-    # key into the field named by the value after being sorted.
+    # Sums one or more fields.  Fields to be summed may either be provided as
+    # the arguments to sum (in which case they will be aggregated into a field
+    # of the same name in the given order), or via a hash using the :mapping
+    # parameter (in which case they will be aggregated from the field named by
+    # the key into the field named by the value after being sorted).
     def sum(*args)
       options = args.extract_options!
       type = JAVA_TYPE_MAP[options[:type]]
-      raise "No type specified for sum" unless type
 
       mapping = options[:mapping] ? options[:mapping].sort : args.zip(args)
       mapping.each do |in_field, out_field|
-        every(in_field, :aggregator => sum_function(out_field, :type => type), :output => all_fields)
+        sum_aggregator = Java::CascadingOperationAggregator::Sum.new(*[fields(out_field), type].compact)
+        every(in_field, :aggregator => sum_aggregator, :output => all_fields)
       end
     end
   end

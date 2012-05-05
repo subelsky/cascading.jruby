@@ -8,15 +8,6 @@ module Cascading
       Java::CascadingOperation::Identity.new
     end
 
-    def sum_function(*args)
-      options = args.extract_options!
-      raise "Need to specify args" if args.empty?
-      type = options[:type] || java.lang.Double.java_class
-      parameters = [Cascading.fields(args),type].compact.to_java
-
-      Java::CascadingOperationAggregator::Sum.new(*parameters)
-    end
-
     def aggregator_function(args, aggregator_klass)
       options = args.extract_options!
       ignore = options[:ignore]
