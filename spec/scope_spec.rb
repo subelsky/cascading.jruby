@@ -42,14 +42,14 @@ context Cascading::Scope do
   it 'should propagate names through CoGroup' do
     test_join_assembly do
       check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
-        :grouping_fields => ['x']
+        :grouping_fields => ['x', 'x_']
     end
   end
 
   it 'should propagate names through CoGroup with no Aggregations' do
     post_join_block = lambda do
       check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
-        :grouping_fields => ['x']
+        :grouping_fields => ['x', 'x_']
     end
 
     test_join_assembly(:post_join_block => post_join_block)
@@ -59,7 +59,7 @@ context Cascading::Scope do
     test_join_assembly do
       sum :mapping => {'x' => 'x_sum'}, :type => :int
       check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
-        :grouping_fields => ['x', 'x_sum']
+        :grouping_fields => ['x', 'x_', 'x_sum']
       assert_group_size_equals 1
     end
   end
@@ -68,31 +68,31 @@ context Cascading::Scope do
     test_join_assembly do
       sum :mapping => {'x' => 'x_sum'}, :type => :int
       check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
-        :grouping_fields => ['x', 'x_sum']
+        :grouping_fields => ['x', 'x_', 'x_sum']
       assert_group_size_equals 1
 
       sum :mapping => {'y' => 'y_sum'}, :type => :int
       check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
-        :grouping_fields => ['x', 'x_sum', 'y_sum']
+        :grouping_fields => ['x', 'x_', 'x_sum', 'y_sum']
       assert_group_size_equals 1
     end
   end
 
   it 'should propagate names through Every' do
     post_join_block = lambda do
-      check_scope :values_fields => ['x', 'x_sum', 'y_sum']
-      assert_size_equals 3
+      check_scope :values_fields => ['x', 'x_', 'x_sum', 'y_sum']
+      assert_size_equals 4
     end
 
     test_join_assembly :post_join_block => post_join_block do
       sum :mapping => {'x' => 'x_sum'}, :type => :int
       check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
-        :grouping_fields => ['x', 'x_sum']
+        :grouping_fields => ['x', 'x_', 'x_sum']
       assert_group_size_equals 1
 
       sum :mapping => {'y' => 'y_sum'}, :type => :int
       check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
-        :grouping_fields => ['x', 'x_sum', 'y_sum']
+        :grouping_fields => ['x', 'x_', 'x_sum', 'y_sum']
       assert_group_size_equals 1
     end
   end
@@ -123,7 +123,7 @@ context Cascading::Scope do
     post_join_block = lambda do
       branch 'data_tuple' do
         check_scope :values_fields => ['offset', 'line', 'x', 'y', 'z', 'offset_', 'line_', 'x_', 'y_', 'z_'],
-          :grouping_fields => ['x']
+          :grouping_fields => ['x', 'x_']
         assert_size_equals 10
       end
     end
