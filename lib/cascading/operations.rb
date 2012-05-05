@@ -11,18 +11,9 @@ module Cascading
     def aggregator_function(args, aggregator_klass)
       options = args.extract_options!
       ignore = options[:ignore]
-      raise "Option 'ignore' is only supported by min, max, first, and last" if ignore && ![
-        Java::CascadingOperationAggregator::First,
-        Java::CascadingOperationAggregator::Min,
-        Java::CascadingOperationAggregator::Max,
-        Java::CascadingOperationAggregator::Last,
-      ].include?(aggregator_klass)
+
       parameters = [Cascading.fields(args), ignore].compact
       aggregator_klass.new(*parameters)
-    end
-
-    def average_function(*args)
-      aggregator_function(args, Java::CascadingOperationAggregator::Average)
     end
 
     def first_function(*args)

@@ -92,13 +92,8 @@ module Cascading
     #
     # <tt>function</tt> is a symbol that is the method to call to construct the Cascading Aggregator.
     def composite_aggregator(args, function)
-      if !args.empty? && args.first.kind_of?(Hash)
-        field_map = args.shift.sort
-        options = args.extract_options!
-      else
-        options = args.extract_options!
-        field_map = args.zip(args)
-      end
+      field_map, options = extract_field_map(args)
+
       field_map.each do |in_field, out_field|
         agg = self.send(function, out_field, options)
         every(in_field, :aggregator => agg, :output => all_fields)
@@ -110,7 +105,6 @@ module Cascading
     def max(*args); composite_aggregator(args, :max_function); end
     def first(*args); composite_aggregator(args, :first_function); end
     def last(*args); composite_aggregator(args, :last_function); end
-    def average(*args); composite_aggregator(args, :average_function); end
 
     # Counts elements of a group.  May optionally specify the name of the
     # output count field (defaults to 'count').
@@ -123,7 +117,8 @@ module Cascading
     # the arguments to sum (in which case they will be aggregated into a field
     # of the same name in the given order), or via a hash using the :mapping
     # parameter (in which case they will be aggregated from the field named by
-    # the key into the field named by the value after being sorted).
+    # the key into the field named by the value after being sorted).  The type
+    # of the output sum may be controlled with the :type parameter.
     def sum(*args)
       options = args.extract_options!
       type = JAVA_TYPE_MAP[options[:type]]
@@ -133,6 +128,35 @@ module Cascading
         sum_aggregator = Java::CascadingOperationAggregator::Sum.new(*[fields(out_field), type].compact)
         every(in_field, :aggregator => sum_aggregator, :output => all_fields)
       end
+    end
+
+    # Averages one or more fields.  The contract of average is identical to
+    # that of other composite aggregators, but it accepts no options.
+    def average(*args)
+      field_map, _ = extract_field_map(args)
+
+      field_map.each do |in_field, out_field|
+        average_aggregator = Java::CascadingOperationAggregator::Average.new(fields(out_field))
+        every(in_field, :aggregator => average_aggregator, :output => all_fields)
+      end
+      puts "WARNING: average invoked on 0 fields; will be ignored" if field_map.empty?
+    end
+
+    private
+
+    # Extracts a field mapping, input field => output field, by accepting a
+    # hash in the first argument.  If no hash is provided, then maps arguments
+    # onto themselves which names outputs the same as inputs.  Additionally
+    # extracts options from args.
+    def extract_field_map(args)
+      if !args.empty? && args.first.kind_of?(Hash)
+        field_map = args.shift.sort
+        options = args.extract_options!
+      else
+        options = args.extract_options!
+        field_map = args.zip(args)
+      end
+      [field_map, options]
     end
   end
 end
