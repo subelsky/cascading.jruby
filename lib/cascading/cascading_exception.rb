@@ -5,11 +5,10 @@
 # underlying Janino expression problems.
 module Cascading
   class CascadingException < StandardError
-    attr_accessor :ne, :message, :depth
+    attr_accessor :ne, :depth
 
     def initialize(native_exception, message)
       @ne = native_exception
-      @message = message
       trace, @depth = trace_causes(@ne, 1)
       super("#{message}\n#{trace}")
     end

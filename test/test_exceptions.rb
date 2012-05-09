@@ -9,7 +9,7 @@ class TC_Exceptions < Test::Unit::TestCase
     e = CascadingException.new(ne1, 'cascading.jruby wrapper exception')
 
     assert_equal ne1, e.ne
-    assert_equal 'cascading.jruby wrapper exception', e.message
+    assert_match /^cascading\.jruby wrapper exception/, e.message
     assert_equal 3, e.depth
 
 
@@ -18,7 +18,7 @@ class TC_Exceptions < Test::Unit::TestCase
 
     assert_equal ne2, e.cause(2)
     # Cascading inserts Operator#to_s, here
-    assert_match /Exception thrown by Cascading/, e.cause(2).message
+    assert_match /Exception thrown by Cascading$/, e.cause(2).message
 
     assert_equal ne3, e.cause(3)
     assert_equal 'Root cause', e.cause(3).message
