@@ -1,4 +1,5 @@
 require 'cascading/operations'
+require 'cascading/scope'
 require 'cascading/ext/array'
 
 module Cascading
