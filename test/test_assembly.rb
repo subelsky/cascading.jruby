@@ -72,7 +72,7 @@ class TC_Assembly < Test::Unit::TestCase
 
   def test_each_identity
     assembly = mock_assembly do
-      each 'offset', :filter => identity
+      each 'offset', :function => identity
     end
 
     flow = assembly.parent
@@ -84,7 +84,7 @@ class TC_Assembly < Test::Unit::TestCase
   def test_create_each
     # You can apply an Each to 0 fields
     assembly = mock_assembly do
-      each(:filter => identity)
+      each(:function => identity)
     end
     assert assembly.tail_pipe.is_a? Java::CascadingPipe::Each
 
@@ -93,7 +93,7 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal 0, assembly.tail_pipe.output_selector.size
 
     assembly = mock_assembly do
-      each 'offset', :output => 'offset_copy', :filter => Java::CascadingOperation::Identity.new(fields('offset_copy'))
+      each 'offset', :output => 'offset_copy', :function => Java::CascadingOperation::Identity.new(fields('offset_copy'))
     end
     pipe = assembly.tail_pipe
 

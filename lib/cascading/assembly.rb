@@ -56,6 +56,8 @@ module Cascading
     def make_pipe(type, parameters)
       @tail_pipe = type.new(*parameters)
       outgoing_scopes[name] = Scope.outgoing_scope(tail_pipe, [scope])
+
+      tail_pipe
     end
     private :make_pipe
 
@@ -246,18 +248,22 @@ module Cascading
     # Builds a basic _each_ pipe, and adds it to the current assembly.
     # --
     # Example:
-    #     each "line", :filter=>regex_splitter(["name", "val1", "val2", "id"],
-    #                  :pattern => /[.,]*\s+/),
-    #                  :output=>["id", "name", "val1", "val2"]
+    #     each 'line', :function => regex_splitter(['name', 'val1', 'val2', 'id'], :pattern => /[.,]*\s+/), :output => ['id', 'name', 'val1', 'val2']
     def each(*args)
       options = args.extract_options!
 
       in_fields = fields(args)
       out_fields = fields(options[:output])
+
       operation = options[:filter] || options[:function]
+      raise 'c.p.Each does not support applying an output selector to a c.o.Filter' if options[:filter] && options[:output]
 
       parameters = [tail_pipe, in_fields, operation, out_fields].compact
-      make_pipe(Java::CascadingPipe::Each, parameters)
+      each = make_pipe(Java::CascadingPipe::Each, parameters)
+      raise ':function specified but c.o.Filter provided' if options[:function] && each.is_filter
+      raise ':filter specified but c.o.Function provided' if options[:filter] && each.is_function
+
+      each
     end
 
     # Restricts the current assembly to the specified fields.
@@ -368,7 +374,7 @@ module Cascading
         fields = args || all_fields
         pattern = options[:pattern]
         output = options[:output] || all_fields
-        each(fields, :filter => regex_parser(pattern, options), :output => output)
+        each(fields, :function => regex_parser(pattern, options), :output => output)
     end
 
     # Builds a pipe that splits a field into other fields, using a specified regular expression.
