@@ -121,7 +121,7 @@ module Cascading
         agg = self.send(function, out_field, options)
         every(in_field, :aggregator => agg, :output => all_fields)
       end
-      puts "WARNING: composite aggregator '#{function.to_s.gsub('_function', '')}' invoked on 0 fields; will be ignored" if field_map.empty?
+      raise "Composite aggregator '#{function.to_s.gsub('_function', '')}' invoked on 0 fields" if field_map.empty?
     end
 
     def min(*args); composite_aggregator(args, :min_function); end
@@ -150,11 +150,11 @@ module Cascading
       mapping = options[:mapping] ? options[:mapping].sort : args.zip(args)
       mapping.each do |in_field, out_field|
         sum_aggregator = Java::CascadingOperationAggregator::Sum.new(*[fields(out_field), type].compact)
-        # NOTE: SumBy requires a type in wip-286, unlike Sum (see Sum.java line
-        # 42 for default)
+        # NOTE: SumBy requires a type in wip-286, unlike Sum (see Sum.java line 42 for default)
         sum_by = Java::CascadingPipeAssembly::SumBy.new(fields(in_field), fields(out_field), type || Java::double.java_class)
         every(in_field, :aggregator => sum_aggregator, :output => all_fields, :aggregate_by => sum_by)
       end
+      raise "sum invoked on 0 fields (note :mapping must be provided to explicitly rename fields)" if mapping.empty?
     end
 
     # Averages one or more fields.  The contract of average is identical to
@@ -167,7 +167,7 @@ module Cascading
         average_by = Java::CascadingPipeAssembly::AverageBy.new(fields(in_field), fields(out_field))
         every(in_field, :aggregator => average_aggregator, :output => all_fields, :aggregate_by => average_by)
       end
-      puts "WARNING: average invoked on 0 fields; will be ignored" if field_map.empty?
+      raise "average invoked on 0 fields" if field_map.empty?
     end
 
     private
