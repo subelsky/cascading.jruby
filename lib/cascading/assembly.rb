@@ -79,13 +79,25 @@ module Cascading
 
     def apply_aggregations(group, incoming_scopes, &block)
       aggregations = Aggregations.new(self, group, incoming_scopes)
-      if block_given?
-        aggregations.instance_eval(&block)
-        aggregations.finalize
-      end
+      aggregations.instance_eval(&block) if block_given?
 
-      @tail_pipe = aggregations.tail_pipe
-      @outgoing_scopes[name] = aggregations.scope
+      if aggregations.can_aggregate_by?
+        grouping_fields = group.key_selectors.values.first
+        group.key_selectors.values.each do |key_fields|
+          raise "Grouping fields mismatch: #{grouping_fields} expected; #{key_fields} found from #{group.key_selectors}" unless key_fields == grouping_fields
+        end
+
+        sub_assembly(Java::CascadingPipeAssembly::AggregateBy.new(
+          name,
+          group.previous,
+          grouping_fields,
+          aggregations.aggregate_bys.to_java(Java::CascadingPipeAssembly::AggregateBy)
+        ), group.previous, incoming_scopes)
+      else
+        aggregations.finalize if block_given?
+        @tail_pipe = aggregations.tail_pipe
+        @outgoing_scopes[name] = aggregations.scope
+      end
     end
     private :apply_aggregations
 

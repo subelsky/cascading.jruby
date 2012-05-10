@@ -132,7 +132,11 @@ class TC_Assembly < Test::Unit::TestCase
         end
       end
       assert assembly.tail_pipe.is_a? Java::CascadingPipe::Every
-      assert_equal last_grouping_fields, assembly.tail_pipe.argument_selector
+
+      # NOTE: this is not valid when we optimize using CountBy
+      #assert_equal last_grouping_fields, assembly.tail_pipe.argument_selector
+      assert_equal fields('count'), assembly.tail_pipe.argument_selector
+
       assert_equal all_fields, assembly.tail_pipe.output_selector
   end
 

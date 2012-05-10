@@ -12,15 +12,23 @@ module Cascading
   # Externally enforced rules:
   #   May be empty (in which case, Aggregations is not instantiated)
   #   Must follow a GroupBy or CoGroup (not a Join or Merge)
+  #
+  # Optimizations:
+  #   If the leading Group is a GroupBy and all subsequent Everies are
+  #   Aggregators that have a corresponding AggregateBy, Aggregations can
+  #   replace the GroupBy/Aggregator pipe with a single composite AggregateBy.
   class Aggregations
     include Operations
 
-    attr_reader :assembly, :tail_pipe, :scope
+    attr_reader :assembly, :tail_pipe, :scope, :aggregate_bys
 
     def initialize(assembly, group, incoming_scopes)
       @assembly = assembly
       @tail_pipe = group
       @scope = Scope.outgoing_scope(tail_pipe, incoming_scopes)
+
+      # AggregateBy optimization only applies to GroupBy
+      @aggregate_bys = tail_pipe.is_group_by ? [] : nil
     end
 
     def debug_scope
@@ -40,10 +48,18 @@ module Cascading
     end
     private :make_pipe
 
-    # "Fix" out values fields after a sequence of Everies.  This is a field name
-    # metadata fix which is why the Identity is not planned into the resulting
-    # Cascading pipe.  Without it, all values fields would propagate through
-    # non-empty aggregations, which doesn't match Cascading's planner's
+    # We can replace these aggregations with the corresponding composite
+    # AggregateBy if the leading Group was a GroupBy and all subsequent
+    # Aggregators had a corresponding AggregateBy (which we've encoded in the
+    # list of aggregate_bys being a non-empty array).
+    def can_aggregate_by?
+      aggregate_bys && !aggregate_bys.empty?
+    end
+
+    # "Fix" out values fields after a sequence of Everies.  This is a field
+    # name metadata fix which is why the Identity is not planned into the
+    # resulting Cascading pipe.  Without it, all values fields would propagate
+    # through non-empty aggregations, which doesn't match Cascading's planner's
     # behavior.
     def finalize
       discard_each = Java::CascadingPipe::Each.new(tail_pipe, all_fields, Java::CascadingOperation::Identity.new)
@@ -59,6 +75,12 @@ module Cascading
       in_fields = fields(args)
       out_fields = fields(options[:output])
       operation = options[:aggregator] || options[:buffer]
+
+      if options[:aggregate_by] && aggregate_bys
+        aggregate_bys << options[:aggregate_by]
+      else
+        @aggregate_bys = nil
+      end
 
       parameters = [tail_pipe, in_fields, operation, out_fields].compact
       make_pipe(Java::CascadingPipe::Every, parameters)
@@ -111,7 +133,8 @@ module Cascading
     # output count field (defaults to 'count').
     def count(name = 'count')
       count_aggregator = Java::CascadingOperationAggregator::Count.new(fields(name))
-      every(last_grouping_fields, :aggregator => count_aggregator, :output => all_fields)
+      count_by = Java::CascadingPipeAssembly::CountBy.new(fields(name))
+      every(last_grouping_fields, :aggregator => count_aggregator, :output => all_fields, :aggregate_by => count_by)
     end
 
     # Sums one or more fields.  Fields to be summed may either be provided as
@@ -127,7 +150,10 @@ module Cascading
       mapping = options[:mapping] ? options[:mapping].sort : args.zip(args)
       mapping.each do |in_field, out_field|
         sum_aggregator = Java::CascadingOperationAggregator::Sum.new(*[fields(out_field), type].compact)
-        every(in_field, :aggregator => sum_aggregator, :output => all_fields)
+        # NOTE: SumBy requires a type in wip-286, unlike Sum (see Sum.java line
+        # 42 for default)
+        sum_by = Java::CascadingPipeAssembly::SumBy.new(fields(in_field), fields(out_field), type || Java::double.java_class)
+        every(in_field, :aggregator => sum_aggregator, :output => all_fields, :aggregate_by => sum_by)
       end
     end
 
@@ -138,7 +164,8 @@ module Cascading
 
       field_map.each do |in_field, out_field|
         average_aggregator = Java::CascadingOperationAggregator::Average.new(fields(out_field))
-        every(in_field, :aggregator => average_aggregator, :output => all_fields)
+        average_by = Java::CascadingPipeAssembly::AverageBy.new(fields(in_field), fields(out_field))
+        every(in_field, :aggregator => average_aggregator, :output => all_fields, :aggregate_by => average_by)
       end
       puts "WARNING: average invoked on 0 fields; will be ignored" if field_map.empty?
     end
