@@ -56,6 +56,17 @@ module Cascading
       raise "Incoming edges did not capture all inputs; #{inputs.size} remaining" unless inputs.size == 1
       @tail_pipe, @scope = inputs.first
       raise "Expected scope propagation to end with tail pipe; ended with '#{@tail_pipe}' instead" unless sub_assembly.tails.first == @tail_pipe
+
+      # This is the same "fix" applied to our field name metadata after a
+      # sequence of Everies in Aggregations.  It just so happens that all of
+      # CountBy, SumBy, and AverageBy end with Everies.  However, it appears to
+      # only be necessary for AverageBy (which has different declaredFields for
+      # its partials than its final, unlike the other two).  It would be nice
+      # to track this issue down so that we can remove this hack from here and
+      # Aggregations#finalize.
+      discard_each = Java::CascadingPipe::Each.new(tail_pipe, all_fields, Java::CascadingOperation::Identity.new)
+      @scope = Scope.outgoing_scope(discard_each, [scope])
+
       [@tail_pipe, @scope]
     end
 

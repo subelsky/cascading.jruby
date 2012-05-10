@@ -53,7 +53,7 @@ module Cascading
     # Aggregators had a corresponding AggregateBy (which we've encoded in the
     # list of aggregate_bys being a non-empty array).
     def can_aggregate_by?
-      aggregate_bys && !aggregate_bys.empty?
+      !aggregate_bys.nil? && !aggregate_bys.empty?
     end
 
     # "Fix" out values fields after a sequence of Everies.  This is a field

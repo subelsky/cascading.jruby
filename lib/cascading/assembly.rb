@@ -81,22 +81,27 @@ module Cascading
       aggregations = Aggregations.new(self, group, incoming_scopes)
       aggregations.instance_eval(&block) if block_given?
 
-      if aggregations.can_aggregate_by?
+      # Sorting of any type means that we cannot use the AggregateBy optimization
+      if aggregations.can_aggregate_by? && !group.is_sorted && !group.is_sort_reversed
         grouping_fields = group.key_selectors.values.first
         group.key_selectors.values.each do |key_fields|
           raise "Grouping fields mismatch: #{grouping_fields} expected; #{key_fields} found from #{group.key_selectors}" unless key_fields == grouping_fields
         end
 
-        sub_assembly(Java::CascadingPipeAssembly::AggregateBy.new(
+        aggregate_by = sub_assembly(Java::CascadingPipeAssembly::AggregateBy.new(
           name,
           group.previous,
           grouping_fields,
           aggregations.aggregate_bys.to_java(Java::CascadingPipeAssembly::AggregateBy)
         ), group.previous, incoming_scopes)
+
+        aggregate_by
       else
         aggregations.finalize if block_given?
         @tail_pipe = aggregations.tail_pipe
         @outgoing_scopes[name] = aggregations.scope
+
+        group
       end
     end
     private :apply_aggregations
@@ -251,6 +256,8 @@ module Cascading
 
       @tail_pipe = sub_assembly.tail_pipe
       @outgoing_scopes[name] = sub_assembly.scope
+
+      sub_assembly
     end
 
     # Builds a basic _each_ pipe, and adds it to the current assembly.
