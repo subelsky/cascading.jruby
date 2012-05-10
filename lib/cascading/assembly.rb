@@ -13,7 +13,7 @@ module Cascading
   class Assembly < Cascading::Node
     include Operations
 
-    attr_reader :head_pipe, :tail_pipe, :incoming_scopes
+    attr_reader :head_pipe, :tail_pipe
 
     def initialize(name, parent, outgoing_scopes = {})
       super(name, parent)
@@ -33,8 +33,8 @@ module Cascading
     end
 
     def describe(offset = '')
-      incoming_scopes_desc = "#{incoming_scopes.map{ |incoming_scope| incoming_scope.values_fields.to_a.inspect }.join(', ')}"
-      incoming_scopes_desc = "(#{incoming_scopes_desc})" unless incoming_scopes.size == 1
+      incoming_scopes_desc = "#{@incoming_scopes.map{ |incoming_scope| incoming_scope.values_fields.to_a.inspect }.join(', ')}"
+      incoming_scopes_desc = "(#{incoming_scopes_desc})" unless @incoming_scopes.size == 1
       description =  "#{offset}#{name}:assembly :: #{incoming_scopes_desc} -> #{scope.values_fields.to_a.inspect}"
       description += "\n#{child_names.map{ |child| children[child].describe("#{offset}  ") }.join("\n")}" unless children.empty?
       description
@@ -70,7 +70,7 @@ module Cascading
         raise "Could not find assembly '#{assembly_name}' from '#{name}'" unless assembly
 
         pipes << assembly.tail_pipe
-        incoming_scopes << assembly.scope
+        @incoming_scopes << assembly.scope
         group_fields << fields(group_fields_args[assembly_name]) if group_fields_args[assembly_name]
       end
       [pipes, group_fields]
@@ -120,7 +120,7 @@ module Cascading
 
       raise 'join requires non-empty :on parameter' if group_fields_args.empty?
       group_fields = group_fields.to_java(Java::CascadingTuple::Fields)
-      incoming_fields = incoming_scopes.map{ |s| s.values_fields }
+      incoming_fields = @incoming_scopes.map{ |s| s.values_fields }
       declared_fields = fields(options[:declared_fields] || dedup_fields(*incoming_fields))
       joiner = options[:joiner]
 
@@ -151,7 +151,7 @@ module Cascading
         result_group_fields,
         joiner
       ]
-      apply_aggregations(Java::CascadingPipe::CoGroup.new(*parameters), incoming_scopes, &block)
+      apply_aggregations(Java::CascadingPipe::CoGroup.new(*parameters), @incoming_scopes, &block)
     end
     alias co_group join
 
@@ -219,13 +219,13 @@ module Cascading
       pipes, _ = populate_incoming_scopes(args)
 
       # Must provide group_fields to ensure field name propagation
-      group_fields = fields(incoming_scopes.first.values_fields.get(0)) unless group_fields
+      group_fields = fields(@incoming_scopes.first.values_fields.get(0)) unless group_fields
 
       # FIXME: GroupBy is missing a constructor for union in wip-255
       sort_fields = group_fields if !sort_fields && !reverse.nil?
 
       parameters = [pipes.to_java(Java::CascadingPipe::Pipe), group_fields, sort_fields, reverse].compact
-      apply_aggregations(Java::CascadingPipe::GroupBy.new(*parameters), incoming_scopes, &block)
+      apply_aggregations(Java::CascadingPipe::GroupBy.new(*parameters), @incoming_scopes, &block)
     end
     alias :union_pipes :union
 
