@@ -61,6 +61,22 @@ module Cascading
     end
     private :make_pipe
 
+    def populate_incoming_scopes(assembly_names, group_fields_args = {})
+      # NOTE: this overrides the existing incoming_scopes, which changes the
+      # way describe will function on this assembly
+      pipes, @incoming_scopes, group_fields = [], [], []
+      assembly_names.each do |assembly_name|
+        assembly = parent_flow.find_child(assembly_name)
+        raise "Could not find assembly '#{assembly_name}' from '#{name}'" unless assembly
+
+        pipes << assembly.tail_pipe
+        incoming_scopes << assembly.scope
+        group_fields << fields(group_fields_args[assembly_name]) if group_fields_args[assembly_name]
+      end
+      [pipes, group_fields]
+    end
+    private :populate_incoming_scopes
+
     def apply_aggregations(group, incoming_scopes, &block)
       aggregations = Aggregations.new(self, group, incoming_scopes)
       if block_given?
@@ -82,14 +98,7 @@ module Cascading
     def join(*args, &block)
       options = args.extract_options!
 
-      pipes, @incoming_scopes = [], []
-      args.each do |assembly_name|
-        assembly = parent_flow.find_child(assembly_name)
-        raise "Could not find assembly '#{assembly_name}' in join" unless assembly
-
-        pipes << assembly.tail_pipe
-        incoming_scopes << assembly.scope
-      end
+      pipes, _ = populate_incoming_scopes(args)
 
       group_fields_args = options[:on]
       raise 'join requires :on parameter' unless group_fields_args
@@ -104,17 +113,7 @@ module Cascading
           group_fields << fields(group_fields_args)
         end
       elsif group_fields_args.kind_of?(Hash)
-        pipes, @incoming_scopes = [], []
-        keys = group_fields_args.keys.sort
-        keys.each do |assembly_name|
-          v = group_fields_args[assembly_name]
-          assembly = parent_flow.find_child(assembly_name)
-          raise "Could not find assembly '#{assembly_name}' in join" unless assembly
-
-          pipes << assembly.tail_pipe
-          incoming_scopes << assembly.scope
-          group_fields << fields(v)
-        end
+        pipes, group_fields = populate_incoming_scopes(group_fields_args.keys.sort, group_fields_args)
       else
         raise "Unsupported data type for :on in join: '#{group_fields_args.class}'"
       end
@@ -217,14 +216,7 @@ module Cascading
       sort_fields = fields(options[:sort_by])
       reverse = options[:reverse]
 
-      pipes, @incoming_scopes = [], []
-      args.each do |assembly_name|
-        assembly = parent_flow.find_child(assembly_name)
-        raise "Could not find assembly '#{assembly_name}' in union" unless assembly
-
-        pipes << assembly.tail_pipe
-        incoming_scopes << assembly.scope
-      end
+      pipes, _ = populate_incoming_scopes(args)
 
       # Must provide group_fields to ensure field name propagation
       group_fields = fields(incoming_scopes.first.values_fields.get(0)) unless group_fields
