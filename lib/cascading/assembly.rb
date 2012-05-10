@@ -13,7 +13,7 @@ module Cascading
   class Assembly < Cascading::Node
     include Operations
 
-    attr_reader :head_pipe, :tail_pipe, :incoming_scopes, :outgoing_scopes
+    attr_reader :head_pipe, :tail_pipe, :incoming_scopes
 
     def initialize(name, parent, outgoing_scopes = {})
       super(name, parent)
@@ -22,11 +22,11 @@ module Cascading
       if parent.kind_of?(Assembly)
         @head_pipe = Java::CascadingPipe::Pipe.new(name, parent.tail_pipe)
         # Copy to allow destructive update of name
-        outgoing_scopes[name] = parent.scope.copy
+        @outgoing_scopes[name] = parent.scope.copy
         scope.scope.name = name
       else # Parent is a Flow
         @head_pipe = Java::CascadingPipe::Pipe.new(name)
-        outgoing_scopes[name] ||= Scope.empty_scope(name)
+        @outgoing_scopes[name] ||= Scope.empty_scope(name)
       end
       @tail_pipe = head_pipe
       @incoming_scopes = [scope]
@@ -46,7 +46,7 @@ module Cascading
     end
 
     def scope
-      outgoing_scopes[name]
+      @outgoing_scopes[name]
     end
 
     def debug_scope
@@ -55,7 +55,7 @@ module Cascading
 
     def make_pipe(type, parameters)
       @tail_pipe = type.new(*parameters)
-      outgoing_scopes[name] = Scope.outgoing_scope(tail_pipe, [scope])
+      @outgoing_scopes[name] = Scope.outgoing_scope(tail_pipe, [scope])
 
       tail_pipe
     end
@@ -69,7 +69,7 @@ module Cascading
       end
 
       @tail_pipe = aggregations.tail_pipe
-      outgoing_scopes[name] = aggregations.scope
+      @outgoing_scopes[name] = aggregations.scope
     end
     private :apply_aggregations
 
@@ -88,7 +88,7 @@ module Cascading
         raise "Could not find assembly '#{assembly_name}' in join" unless assembly
 
         pipes << assembly.tail_pipe
-        incoming_scopes << outgoing_scopes[assembly.name]
+        incoming_scopes << assembly.scope
       end
 
       group_fields_args = options[:on]
@@ -112,7 +112,7 @@ module Cascading
           raise "Could not find assembly '#{assembly_name}' in join" unless assembly
 
           pipes << assembly.tail_pipe
-          incoming_scopes << outgoing_scopes[assembly.name]
+          incoming_scopes << assembly.scope
           group_fields << fields(v)
         end
       else
@@ -187,7 +187,7 @@ module Cascading
     # Builds a new branch.
     def branch(name, &block)
       raise "Could not build branch '#{name}'; block required" unless block_given?
-      assembly = Assembly.new(name, self, outgoing_scopes)
+      assembly = Assembly.new(name, self, @outgoing_scopes)
       add_child(assembly)
       assembly.instance_eval(&block)
       assembly
@@ -223,7 +223,7 @@ module Cascading
         raise "Could not find assembly '#{assembly_name}' in union" unless assembly
 
         pipes << assembly.tail_pipe
-        incoming_scopes << outgoing_scopes[assembly.name]
+        incoming_scopes << assembly.scope
       end
 
       # Must provide group_fields to ensure field name propagation
@@ -242,7 +242,7 @@ module Cascading
       sub_assembly.finalize
 
       @tail_pipe = sub_assembly.tail_pipe
-      outgoing_scopes[name] = sub_assembly.scope
+      @outgoing_scopes[name] = sub_assembly.scope
     end
 
     # Builds a basic _each_ pipe, and adds it to the current assembly.
