@@ -229,9 +229,13 @@ module Cascading
     end
     alias :union_pipes :union
 
-    def sub_assembly(sub_assembly)
+    # Allows you to plugin c.p.SubAssemblies to a cascading.jruby Assembly
+    # under certain assumptions.  Note the default is to extend the tail pipe
+    # of this Assembly using a linear SubAssembly.  See SubAssembly class for
+    # details.
+    def sub_assembly(sub_assembly, pipes = [tail_pipe], incoming_scopes = [scope])
       sub_assembly = SubAssembly.new(self, sub_assembly)
-      sub_assembly.finalize
+      sub_assembly.finalize(pipes, incoming_scopes)
 
       @tail_pipe = sub_assembly.tail_pipe
       @outgoing_scopes[name] = sub_assembly.scope

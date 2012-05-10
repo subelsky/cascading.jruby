@@ -588,6 +588,23 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['offset', 'line'], assembly.scope.grouping_fields.to_a
   end
 
+  def test_merging_sub_assembly
+    assembly = mock_branched_assembly do
+      pipes, _ = populate_incoming_scopes(['test1', 'test2'])
+
+      aggregate_by = Java::CascadingPipeAssembly::AggregateBy.new(
+        name,
+        pipes.to_java(Java::CascadingPipe::Pipe),
+        fields('line'),
+        [Java::CascadingPipeAssembly::CountBy.new(fields('count'))].to_java(Java::CascadingPipeAssembly::AggregateBy)
+      )
+
+      sub_assembly aggregate_by, pipes, @incoming_scopes
+    end
+    assert_equal ['line', 'count'], assembly.scope.values_fields.to_a
+    assert_equal ['line', 'count'], assembly.scope.grouping_fields.to_a
+  end
+
   def test_empty_where
     assembly = mock_assembly do
       split 'line', ['name', 'score1', 'score2', 'id'], :pattern => /[.,]*\s+/, :output => ['name', 'score1', 'score2', 'id']
