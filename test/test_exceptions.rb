@@ -10,8 +10,8 @@ class TC_Exceptions < Test::Unit::TestCase
 
     assert_equal ne1, e.ne
     assert_match /^cascading\.jruby wrapper exception/, e.message
+    assert_match /^Exception summary for: cascading\.jruby wrapper exception/, e.message
     assert_equal 3, e.depth
-
 
     assert_equal ne1, e.cause(1)
     assert_equal 'Exception Cascading hands us', e.cause(1).message
