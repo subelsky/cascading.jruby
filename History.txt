@@ -1,3 +1,11 @@
+0.0.8 - AggregateBy and upgrade to Cascading 2.0.0 wip-286
+
+This release upgrades to Cascading 2.0.0 wip-286, but again does not implement
+local mode.  It does, however, replace group_by/union which contain only count,
+sum, and average with the corresponding composite AggregateBy.  Various
+refactorings were required to support this, including the addition of limited
+support for SubAssemblies.
+
 0.0.7 - Upgrade to Cascading 2.0.0 wip-255
 
 This release upgrades to Cascading 2.0.0 wip-255, but implements neither local
