@@ -107,15 +107,21 @@ module Cascading
 
     def to_java_comparable_array(arr)
       (arr.map do |v|
-        case v.class
+        coerce_to_java(v)
+      end).to_java(java.lang.Comparable)
+    end
+
+    def coerce_to_java(v)
+      case v
         when Fixnum
           java.lang.Integer.new(v)
         when Float
           java.lang.Double.new(v)
+        when NilClass
+          nil
         else
           java.lang.String.new(v.to_s)
-        end
-      end).to_java(java.lang.Comparable)
+      end
     end
 
     def expression_filter(*args)
