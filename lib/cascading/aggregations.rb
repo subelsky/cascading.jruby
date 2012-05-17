@@ -4,19 +4,20 @@ require 'cascading/ext/array'
 
 module Cascading
   # Rules enforced by Aggregations:
-  #   Contains either 1 Buffer or >= 1 Aggregator (explicitly checked)
-  #   No GroupBys, CoGroups, Joins, or Merges (methods for these pipes do not exist on Aggregations)
-  #   No Eaches (Aggregations#each does not exist)
-  #   Aggregations may not branch (Aggregations#branch does not exist)
+  # * Contains either 1 Buffer or >= 1 Aggregator (explicitly checked)
+  # * No GroupBys, CoGroups, Joins, or Merges (methods for these pipes do not
+  # exist on Aggregations)
+  # * No Eaches (Aggregations#each does not exist)
+  # * Aggregations may not branch (Aggregations#branch does not exist)
   #
   # Externally enforced rules:
-  #   May be empty (in which case, Aggregations is not instantiated)
-  #   Must follow a GroupBy or CoGroup (not a Join or Merge)
+  # * May be empty (in which case, Aggregations is not instantiated)
+  # * Must follow a GroupBy or CoGroup (not a Join or Merge)
   #
   # Optimizations:
-  #   If the leading Group is a GroupBy and all subsequent Everies are
-  #   Aggregators that have a corresponding AggregateBy, Aggregations can
-  #   replace the GroupBy/Aggregator pipe with a single composite AggregateBy.
+  # * If the leading Group is a GroupBy and all subsequent Everies are
+  # Aggregators that have a corresponding AggregateBy, Aggregations can replace
+  # the GroupBy/Aggregator pipe with a single composite AggregateBy
   class Aggregations
     include Operations
 
@@ -110,10 +111,10 @@ module Cascading
     # insert) and an options hash.
     #
     # Options include:
-    #   * <tt>:ignore</tt> a Java Array of Objects (for min and max) or Tuples
-    #     (for first and last) of values for the aggregator to ignore
-    #
-    # <tt>function</tt> is a symbol that is the method to call to construct the Cascading Aggregator.
+    # * <tt>:ignore</tt> a Java Array of Objects (for min and max) or Tuples
+    # (for first and last) of values for the aggregator to ignore
+    # * <tt>function</tt> is a symbol that is the method to call to construct
+    # the Cascading Aggregator.
     def composite_aggregator(args, function)
       field_map, options = extract_field_map(args)
 

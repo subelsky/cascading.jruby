@@ -1,9 +1,9 @@
-# NativeException wrapper that prints the full nested stack trace of the Java
-# exception and all of its causes wrapped by the NativeException.
-# NativeException by default reveals only the first cause, which is
-# insufficient for tracing cascading.jruby errors into JRuby code or revealing
-# underlying Janino expression problems.
 module Cascading
+  # NativeException wrapper that prints the full nested stack trace of the Java
+  # exception and all of its causes wrapped by the NativeException.
+  # NativeException by default reveals only the first cause, which is
+  # insufficient for tracing cascading.jruby errors into JRuby code or
+  # revealing underlying Janino expression problems.
   class CascadingException < StandardError
     attr_accessor :ne, :depth
 
