@@ -14,9 +14,12 @@ module Cascading
       @last_child = nil
     end
 
+    # Children must be uniquely named within the scope of each Node.  This
+    # ensures, for example, two assemblies are not created within the same flow
+    # with the same name, causing joins, unions, and sinks on them to be
+    # ambiguous.
     def add_child(node)
-      child = root.find_child(node.name)
-      warn "WARNING: adding '#{node.qualified_name}', but node named '#{node.name}' already exists at '#{child.qualified_name}'" if child
+      raise AmbiguousNodeNameException.new("Attempted to add '#{node.qualified_name}', but node named '#{node.name}' already exists") if @children[node.name]
 
       @children[node.name] = node
       @child_names << node.name
@@ -33,20 +36,35 @@ module Cascading
     end
     alias desc describe
 
+    # In order to find a child, we require it to be uniquely named within this
+    # Node and its children.  This ensures, for example, branches in peer
+    # assemblies or branches and assemblies do not conflict in joins, unions,
+    # and sinks.
     def find_child(name)
-      children.each do |child_name, child|
-        return child if child_name == name
-        result = child.find_child(name)
-        return result if result
-      end
-      nil
+      all_children_with_name = find_all_children_with_name(name)
+      qualified_names = all_children_with_name.map{ |child| child.qualified_name }
+      raise AmbiguousNodeNameException.new("Ambiguous lookup of child by name '#{name}'; found '#{qualified_names.join("', '")}'") if all_children_with_name.size > 1
+
+      all_children_with_name.first
     end
 
     def root
       return self unless parent
       parent.root
     end
+
+    protected
+
+    def find_all_children_with_name(name)
+      child_names.map do |child_name|
+        children[child_name] if child_name == name
+      end.compact + child_names.map do |child_name|
+        children[child_name].find_all_children_with_name(name)
+      end.flatten
+    end
   end
+
+  class AmbiguousNodeNameException < StandardError; end
 
   # A module to add auto-registration capability
   module Registerable

@@ -31,40 +31,30 @@ class TC_Flow < Test::Unit::TestCase
   end
 
   def test_ambiguous_assembly_names
-    a1, a2, x = nil, nil, nil
-    flow = flow 'flow' do
-      source 'a', tap('test/data/data1.txt')
+    ex = assert_raise AmbiguousNodeNameException do
+      a1, a2, x = nil, nil, nil
+      flow = flow 'flow' do
+        source 'a', tap('test/data/data1.txt')
 
-      a1 = assembly 'a' do
-        pass
-      end
+        a1 = assembly 'a' do
+          pass
+        end
 
-      a2 = assembly 'a' do
-        pass
-      end
+        a2 = assembly 'a' do
+          pass
+        end
 
-      x = assembly 'x' do
-        union 'a'
+        x = assembly 'x' do
+          union 'a'
+        end
       end
     end
-
-    # FIXME: 'a' assemblies and qualified names collide
-    assert_equal 2, flow.children.size
-    assert_equal 'flow.a', a1.qualified_name
-    assert_equal 'flow.a', a2.qualified_name
-
-    # Ordered child names do not collide
-    assert_equal ['a', 'a', 'x'], flow.child_names
-
-    # FIXME: assembly defined last wins
-    assert_equal a2, flow.find_child('a')
-
-    assert_equal 1, x.tail_pipe.heads.size
-    assert_equal a2.head_pipe, x.tail_pipe.heads.first
+    assert_equal "Attempted to add 'flow.a', but node named 'a' already exists", ex.message
   end
 
   def test_ambiguous_branch_names
-    b1, b2, x = nil, nil, nil
+    # You _can_ define ambiguously named branches
+    b1, b2 = nil, nil
     flow = flow 'flow' do
       source 'a', tap('test/data/data1.txt')
       source 'b', tap('test/data/data1.txt')
@@ -79,21 +69,48 @@ class TC_Flow < Test::Unit::TestCase
         pass
       end
 
-      x = assembly 'x' do
-        union 'b'
-      end
+      sink 'b', tap('output/test_ambiguous_branch_names')
     end
 
-    # FIXME: 'b' assemblies collide even though qualified names don't
-    assert_equal 3, flow.children.size
+    assert_equal 2, flow.children.size
     assert_equal 'flow.a.b', b1.qualified_name
     assert_equal 'flow.b', b2.qualified_name
-    assert_equal ['a', 'b', 'x'], flow.child_names
+    assert_equal ['a', 'b'], flow.child_names
 
-    # FIXME: branch hit by depth-first serach first
-    assert_equal b1, flow.find_child('b')
+    # You _cannot_ look them up using find_child
+    ex = assert_raise AmbiguousNodeNameException do
+      flow.find_child('b')
+    end
+    assert_equal "Ambiguous lookup of child by name 'b'; found 'flow.b', 'flow.a.b'", ex.message
 
-    assert_equal 1, x.tail_pipe.heads.size
-    assert_equal b1.parent.head_pipe, x.tail_pipe.heads.first
+    # Which means you cannot sink them
+    ex = assert_raise AmbiguousNodeNameException do
+      flow.complete # NOTE: We must complete for sink to raise
+    end
+    assert_equal "Ambiguous lookup of child by name 'b'; found 'flow.b', 'flow.a.b'", ex.message
+
+    # And you cannot use them for join or union
+    ex = assert_raise AmbiguousNodeNameException do
+      b1, b2, x = nil, nil, nil
+      flow = flow 'flow' do
+        source 'a', tap('test/data/data1.txt')
+        source 'b', tap('test/data/data1.txt')
+
+        assembly 'a' do
+          b1 = branch 'b' do
+            pass
+          end
+        end
+
+        b2 = assembly 'b' do
+          pass
+        end
+
+        x = assembly 'x' do
+          union 'b'
+        end
+      end
+    end
+    assert_equal "Ambiguous lookup of child by name 'b'; found 'flow.b', 'flow.a.b'", ex.message
   end
 end
