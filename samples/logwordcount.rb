@@ -10,8 +10,7 @@ cascade 'logwordcount' do
     source 'input', tap('samples/data/gutenberg/the_outline_of_science_vol_1')
 
     assembly 'input' do
-      # TODO: create a helper for RegexSplitGenerator
-      each 'line', :function => regex_split_generator('word', :pattern => /[.,]*\s+/)
+      split_rows 'line', 'word', :pattern => /[.,]*\s+/, :output => 'word'
       group_by 'word' do
         count
       end
