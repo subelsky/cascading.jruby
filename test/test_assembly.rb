@@ -57,13 +57,14 @@ class TC_Assembly < Test::Unit::TestCase
   def test_every_cannot_follow_tap
     # Assembly#count is no longer defined; instead, it has moved to
     # Aggregations#count
-    assert_raise NameError do
+    ex = assert_raise NameError do
       assembly = mock_assembly do
         count
       end
       pipe = assembly.tail_pipe
       assert Java::CascadingPipe::Every, pipe.class
     end
+    assert_match /^undefined local variable or method `count' for #<Cascading::Assembly:.*>$/, ex.message
   end
 
   def test_create_every
@@ -315,7 +316,7 @@ class TC_Assembly < Test::Unit::TestCase
   end
 
   def test_union_undefined_inputs
-    assert_raise RuntimeError, "Could not find assembly 'doesnotexist' in union" do
+    ex = assert_raise RuntimeError do
       flow 'test_union_undefined_inputs' do
         source 'data1', tap('test/data/data1.txt')
 
@@ -330,6 +331,7 @@ class TC_Assembly < Test::Unit::TestCase
         sink 'union', tap('output/test_union_undefined_inputs')
       end
     end
+    assert_equal "Could not find assembly 'doesnotexist' from 'union'", ex.message
   end
 
   def test_create_join
@@ -408,7 +410,7 @@ class TC_Assembly < Test::Unit::TestCase
   end
 
   def test_join_undefined_inputs
-    assert_raise RuntimeError, "Could not find assembly 'doesnotexist' in join" do
+    ex = assert_raise RuntimeError do
       flow 'test_join_undefined_inputs' do
         source 'data1', tap('test/data/data1.txt')
 
@@ -423,36 +425,41 @@ class TC_Assembly < Test::Unit::TestCase
         sink 'join', tap('output/test_join_undefined_inputs')
       end
     end
+    assert_equal "Could not find assembly 'doesnotexist' from 'join'", ex.message
   end
 
   def test_join_without_on
-    assert_raise RuntimeError, 'join requires :on parameter' do
+    ex = assert_raise RuntimeError do
       mock_two_input_assembly do
         join 'test1', 'test2'
       end
     end
+    assert_equal 'join requires :on parameter', ex.message
   end
 
   def test_join_invalid_on
-    assert_raise RuntimeError, "Unsupported data type for :on in join: 'Fixnum'" do
+    ex = assert_raise RuntimeError do
       mock_two_input_assembly do
         join 'test1', 'test2', :on => 1
       end
     end
+    assert_equal "Unsupported data type for :on in join: 'Fixnum'", ex.message
   end
 
   def test_join_empty_on
-    assert_raise RuntimeError, 'join requres non-empty :on parameter' do
+    ex = assert_raise RuntimeError do
       mock_two_input_assembly do
         join 'test1', 'test2', :on => []
       end
     end
+    assert_equal "join requires non-empty :on parameter", ex.message
 
-    assert_raise RuntimeError, 'join requres non-empty :on parameter' do
+    ex = assert_raise RuntimeError do
       mock_two_input_assembly do
         join 'test1', 'test2', :on => {}
       end
     end
+    assert_equal "join requires non-empty :on parameter", ex.message
   end
 
   def test_branch_unique
