@@ -25,30 +25,16 @@ module Cascading
       assembly
     end
 
-    # Create a new sink for this flow, with the specified name.
-    # "tap" can be either a tap (see Cascading.tap) or a string that will
-    # reference a path.
-    def sink(*args)
-      if (args.size == 2)
-        sinks[args[0]] = args[1]
-      elsif (args.size == 1)
-        sinks[name] =  args[0]
-      end
+    # Create a new source for this flow, using the specified name and c.Tap.
+    def source(name, tap)
+      sources[name] = tap
+      incoming_scopes[name] = Scope.tap_scope(tap, name)
+      outgoing_scopes[name] = incoming_scopes[name]
     end
 
-    # Create a new source for this flow, with the specified name.
-    # "tap" can be either a tap (see Cascading.tap) or a string that will
-    # reference a path.
-    def source(*args)
-      if (args.size == 2)
-        sources[args[0]] = args[1]
-        incoming_scopes[args[0]] = Scope.tap_scope(args[1], args[0])
-        outgoing_scopes[args[0]] = incoming_scopes[args[0]]
-      elsif (args.size == 1)
-        sources[name] = args[0]
-        incoming_scopes[name] = Scope.empty_scope(name)
-        outgoing_scopes[name] = incoming_scopes[name]
-      end
+    # Create a new sink for this flow, using the specified name and c.Tap.
+    def sink(name, tap)
+      sinks[name] = tap
     end
 
     def describe(offset = '')
