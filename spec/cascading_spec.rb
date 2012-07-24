@@ -35,13 +35,13 @@ context Cascading do
   it 'should find branches to sink' do
     cascade 'branched_pass' do
       flow 'branched_pass' do
-        source 'input', tap('spec/resource/test_input.txt', :kind => :lfs, :scheme => text_line_scheme)
+        source 'input', tap('spec/resource/test_input.txt', :scheme => text_line_scheme)
         assembly 'input' do
           branch 'branched_input' do
             project 'line'
           end
         end
-        sink 'branched_input', tap("#{OUTPUT_DIR}/branched_pass_out", :kind => :lfs, :sink_mode => :replace)
+        sink 'branched_input', tap("#{OUTPUT_DIR}/branched_pass_out", :sink_mode => :replace)
       end
     end.complete
 
@@ -53,22 +53,22 @@ context Cascading do
   it 'should create an isolated namespace per cascade' do
     cascade 'double' do
       flow 'double' do
-        source 'input', tap('spec/resource/test_input.txt', :kind => :lfs, :scheme => text_line_scheme)
+        source 'input', tap('spec/resource/test_input.txt', :scheme => text_line_scheme)
         assembly 'input' do # Dup name
           insert 'doubled' => expr('line:string + "," + line:string')
           project 'doubled'
         end
-        sink 'input', tap("#{OUTPUT_DIR}/double_out", :kind => :lfs, :sink_mode => :replace)
+        sink 'input', tap("#{OUTPUT_DIR}/double_out", :sink_mode => :replace)
       end
     end
 
     cascade 'pass' do
       flow 'pass' do
-        source 'input', tap('spec/resource/test_input.txt', :kind => :lfs, :scheme => text_line_scheme)
+        source 'input', tap('spec/resource/test_input.txt', :scheme => text_line_scheme)
         assembly 'input' do # Dup name
           project 'line'
         end
-        sink 'input', tap("#{OUTPUT_DIR}/pass_out", :kind => :lfs, :sink_mode => :replace)
+        sink 'input', tap("#{OUTPUT_DIR}/pass_out", :sink_mode => :replace)
       end
     end
 
@@ -81,8 +81,8 @@ context Cascading do
   it 'should support joins in branches' do
     cascade 'branch_join' do
       flow 'branch_join' do
-        source 'left', tap('spec/resource/join_input.txt', :kind => :lfs, :scheme => text_line_scheme)
-        source 'right', tap('spec/resource/join_input.txt', :kind => :lfs, :scheme => text_line_scheme)
+        source 'left', tap('spec/resource/join_input.txt', :scheme => text_line_scheme)
+        source 'right', tap('spec/resource/join_input.txt', :scheme => text_line_scheme)
 
         assembly 'left' do
           split 'line', ['x', 'y', 'z'], :pattern => /,/
@@ -98,7 +98,7 @@ context Cascading do
           end
         end
 
-        sink 'branch_join', tap("#{OUTPUT_DIR}/branch_join_out.txt", :kind => :lfs, :sink_mode => :replace)
+        sink 'branch_join', tap("#{OUTPUT_DIR}/branch_join_out.txt", :sink_mode => :replace)
       end
     end.complete
   end

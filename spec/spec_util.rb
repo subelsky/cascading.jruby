@@ -33,18 +33,18 @@ def test_assembly(params = {}, &block)
   branches = params[:branches] || []
 
   test_flow do
-    source 'input', tap('spec/resource/test_input.txt', :kind => :lfs, :scheme => text_line_scheme)
+    source 'input', tap('spec/resource/test_input.txt', :scheme => text_line_scheme)
 
     # Default Fields defined by TextLineScheme
     check_scope :source => 'input', :values_fields => ['offset', 'line']
 
     assembly 'input', &block
 
-    sink 'input', tap("#{OUTPUT_DIR}/out.txt", :kind => :lfs, :sink_mode => :replace)
+    sink 'input', tap("#{OUTPUT_DIR}/out.txt", :sink_mode => :replace)
 
     # Branches must be sunk so that they (and their assertions) will be run
     branches.each do |branch|
-      sink branch, tap("#{OUTPUT_DIR}/#{branch}_out.txt", :kind => :lfs, :sink_mode => :replace)
+      sink branch, tap("#{OUTPUT_DIR}/#{branch}_out.txt", :sink_mode => :replace)
     end
   end
 end
@@ -54,8 +54,8 @@ def test_join_assembly(params = {}, &block)
   post_join_block = params[:post_join_block]
 
   test_flow do
-    source 'left', tap('spec/resource/join_input.txt', :kind => :lfs, :scheme => text_line_scheme)
-    source 'right', tap('spec/resource/join_input.txt', :kind => :lfs, :scheme => text_line_scheme)
+    source 'left', tap('spec/resource/join_input.txt', :scheme => text_line_scheme)
+    source 'right', tap('spec/resource/join_input.txt', :scheme => text_line_scheme)
 
     # Default Fields defined by TextLineScheme
     check_scope :source => 'left', :values_fields => ['offset', 'line']
@@ -82,11 +82,11 @@ def test_join_assembly(params = {}, &block)
       instance_eval &post_join_block if post_join_block
     end
 
-    sink 'join', tap("#{OUTPUT_DIR}/join_out.txt", :kind => :lfs, :sink_mode => :replace)
+    sink 'join', tap("#{OUTPUT_DIR}/join_out.txt", :sink_mode => :replace)
 
     # Branches must be sunk so that they (and their assertions) will be run
     branches.each do |branch|
-      sink branch, tap("#{OUTPUT_DIR}/#{branch}_out.txt", :kind => :lfs, :sink_mode => :replace)
+      sink branch, tap("#{OUTPUT_DIR}/#{branch}_out.txt", :sink_mode => :replace)
     end
   end
 end

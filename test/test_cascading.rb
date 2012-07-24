@@ -30,20 +30,8 @@ class TC_Cascading < Test::Unit::TestCase
   end
 
   def test_tap
-    tap = tap('/temp')
-    assert_equal '/temp', tap.getPath().toString()
-    assert tap.is_a? Java::CascadingTapHadoop::Hfs
-
-    tap = tap('/temp', :kind => :dfs)
-    assert_equal '/temp', tap.getPath().toString()
-    assert tap.is_a? Java::CascadingTapHadoop::Dfs
-
-    tap = tap('/temp', :kind => :lfs)
-    assert_equal '/temp', tap.getPath().toString()
-    assert tap.is_a? Java::CascadingTapHadoop::Lfs
-
-    tap = tap('/temp', :kind => :hfs)
-    assert_equal '/temp', tap.getPath().toString()
+    tap = tap('/tmp')
+    assert_equal '/tmp', tap.getPath().toString()
     assert tap.is_a? Java::CascadingTapHadoop::Hfs
   end
 end

@@ -132,28 +132,18 @@ module Cascading
     Java::CascadingTap::MultiSinkTap.new(taps.to_java('cascading.tap.Tap'))
   end
 
-  # Generic method for creating taps.
-  # It expects a ":kind" argument pointing to the type of tap to create.
-  def tap(*args)
-    opts = args.extract_options!
-    path = args.empty? ? opts[:path] : args[0]
-    scheme = opts[:scheme] || text_line_scheme
-    sink_mode = opts[:sink_mode] || :keep
+  # Creates a c.t.h.Hfs c.t.Tap given a path and optional :scheme and
+  # :sink_mode.
+  def tap(path, params = {})
+    scheme = params[:scheme] || text_line_scheme
+    sink_mode = params[:sink_mode] || :keep
     sink_mode = case sink_mode
       when :keep, 'keep'       then Java::CascadingTap::SinkMode::KEEP
       when :replace, 'replace' then Java::CascadingTap::SinkMode::REPLACE
       when :append, 'append'   then Java::CascadingTap::SinkMode::APPEND
       else raise "Unrecognized sink mode '#{sink_mode}'"
     end
-    fs = opts[:kind] || :hfs
-    klass = case fs
-      when :hfs, 'hfs' then Java::CascadingTapHadoop::Hfs
-      when :dfs, 'dfs' then Java::CascadingTapHadoop::Dfs
-      when :lfs, 'lfs' then Java::CascadingTapHadoop::Lfs
-      else raise "Unrecognized kind of tap '#{fs}'"
-    end
-    parameters = [scheme, path, sink_mode]
-    klass.new(*parameters)
+    Java::CascadingTapHadoop::Hfs.new(scheme, path, sink_mode)
   end
 
   # Constructs properties to be passed to Flow#complete or Cascade#complete
