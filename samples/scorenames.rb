@@ -17,4 +17,4 @@ cascade 'scorenames', :mode => :local do
 
     sink 'input', tap('output/scorenames', :sink_mode => :replace)
   end
-end.complete(local_properties('build/sample'))
+end.complete

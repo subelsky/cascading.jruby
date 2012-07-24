@@ -20,4 +20,4 @@ cascade 'project', :mode => :local do
 
     sink 'input', tap('output/project', :sink_mode => :replace)
   end
-end.complete(local_properties('build/sample'))
+end.complete

@@ -147,9 +147,10 @@ module Cascading
   end
 
   # Constructs properties to be passed to Flow#complete or Cascade#complete
-  # which will locate temporary Hadoop files in base_dir.  It is necessary
-  # to pass these properties only when executing local scripts via JRuby's main
-  # method, which confuses Cascading's attempt to find the containing jar.
+  # which will locate temporary Hadoop files in base_dir.  It is necessary to
+  # pass these properties only when executing scripts in Hadoop local mode via
+  # JRuby's main method, which confuses Cascading's attempt to find the
+  # containing jar.  When using Cascading local mode, these are unnecessary.
   def local_properties(base_dir)
     dirs = {
       'test.build.data' => "#{base_dir}/build",

@@ -27,4 +27,4 @@ cascade 'branch', :mode => :local do
     sink 'branch1', tap('output/branch1', :sink_mode => :replace)
     sink 'branch2', tap('output/branch2', :sink_mode => :replace)
   end
-end.complete(local_properties('build/sample'))
+end.complete

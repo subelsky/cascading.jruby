@@ -27,4 +27,4 @@ cascade 'sub_assembly', :mode => :local do
 
     sink 'input', tap('output/sub_assembly', :sink_mode => :replace)
   end
-end.complete(local_properties('build/sample'))
+end.complete

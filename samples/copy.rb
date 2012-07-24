@@ -17,4 +17,4 @@ cascade 'copy', :mode => :local do
 
     sink 'input', tap('output/copy', :sink_mode => :replace)
   end
-end.complete(local_properties('build/sample'))
+end.complete

@@ -17,4 +17,4 @@ cascade 'rename', :mode => :local do
 
     sink 'input', tap('output/rename', :sink_mode => :replace)
   end
-end.complete(local_properties('build/sample'))
+end.complete
