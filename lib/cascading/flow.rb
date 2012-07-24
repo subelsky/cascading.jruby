@@ -137,8 +137,8 @@ module Cascading
 
       Java::CascadingFlowHadoop::HadoopFlowConnector.new(properties).connect(
         name,
-        make_tap_parameter(@sources),
-        make_tap_parameter(@sinks),
+        make_tap_parameter(@sources, :head_pipe),
+        make_tap_parameter(@sinks, :tail_pipe),
         make_pipes
       )
     end
@@ -155,12 +155,11 @@ module Cascading
 
     private
 
-    def make_tap_parameter(taps)
+    def make_tap_parameter(taps, pipe_accessor)
       taps.inject({}) do |map, (name, tap)|
         assembly = find_child(name)
         raise "Could not find assembly '#{name}' to connect to tap: #{tap}" unless assembly
-
-        map[assembly.tail_pipe.name] = tap
+        map[assembly.send(pipe_accessor).name] = tap
         map
       end
     end
