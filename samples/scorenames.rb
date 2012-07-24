@@ -3,7 +3,7 @@ $: << File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'cascading'
 
-cascade 'scorenames' do
+cascade 'scorenames', :mode => :local do
   flow 'scorenames' do
     # You don't have to curl and cache inputs: tap can fetch via HTTP
     #source 'input', tap('http://www.census.gov/genealogy/names/dist.all.last')

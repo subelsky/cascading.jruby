@@ -55,8 +55,10 @@ require 'cascading/cascading'
 require 'cascading/cascading_exception'
 require 'cascading/expr_stub'
 require 'cascading/flow'
+require 'cascading/mode'
 require 'cascading/operations'
 require 'cascading/scope'
+require 'cascading/tap'
 
 # include module to make them available at top package
 include Cascading

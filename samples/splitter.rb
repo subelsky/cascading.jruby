@@ -3,7 +3,7 @@ $: << File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'cascading'
 
-cascade 'splitter' do
+cascade 'splitter', :mode => :local do
   flow 'splitter' do
     source 'input', tap('samples/data/data2.txt')
 

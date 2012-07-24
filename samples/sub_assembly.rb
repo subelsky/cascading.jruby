@@ -3,7 +3,7 @@ $: << File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'cascading'
 
-cascade 'sub_assembly' do
+cascade 'sub_assembly', :mode => :local do
   flow 'sub_assembly' do
     source 'input', tap('samples/data/data2.txt')
 

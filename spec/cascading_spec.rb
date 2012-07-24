@@ -33,7 +33,7 @@ context Cascading do
   end
 
   it 'should find branches to sink' do
-    cascade 'branched_pass' do
+    cascade 'branched_pass', :mode => :local do
       flow 'branched_pass' do
         source 'input', tap('spec/resource/test_input.txt', :scheme => text_line_scheme)
         assembly 'input' do
@@ -45,13 +45,13 @@ context Cascading do
       end
     end.complete
 
-    ilc = `wc -l spec/resource/test_input.txt`.split(/\s+/).first
-    olc = `wc -l #{OUTPUT_DIR}/branched_pass_out/part-00000`.split(/\s+/).first
-    ilc.should == olc
+    ilc = `wc -l spec/resource/test_input.txt`.strip.split(/\s+/).first
+    olc = `wc -l #{OUTPUT_DIR}/branched_pass_out`.strip.split(/\s+/).first
+    olc.should == ilc
   end
 
   it 'should create an isolated namespace per cascade' do
-    cascade 'double' do
+    cascade 'double', :mode => :local do
       flow 'double' do
         source 'input', tap('spec/resource/test_input.txt', :scheme => text_line_scheme)
         assembly 'input' do # Dup name
@@ -62,7 +62,7 @@ context Cascading do
       end
     end
 
-    cascade 'pass' do
+    cascade 'pass', :mode => :local do
       flow 'pass' do
         source 'input', tap('spec/resource/test_input.txt', :scheme => text_line_scheme)
         assembly 'input' do # Dup name
@@ -74,12 +74,12 @@ context Cascading do
 
     Cascade.get('double').complete
     Cascade.get('pass').complete
-    diff = `diff #{OUTPUT_DIR}/double_out/part-00000 #{OUTPUT_DIR}/pass_out/part-00000`
+    diff = `diff #{OUTPUT_DIR}/double_out #{OUTPUT_DIR}/pass_out`
     diff.should_not be_empty
   end
 
   it 'should support joins in branches' do
-    cascade 'branch_join' do
+    cascade 'branch_join', :mode => :local do
       flow 'branch_join' do
         source 'left', tap('spec/resource/join_input.txt', :scheme => text_line_scheme)
         source 'right', tap('spec/resource/join_input.txt', :scheme => text_line_scheme)

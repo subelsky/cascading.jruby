@@ -3,7 +3,7 @@ $: << File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'cascading'
 
-cascade 'rename' do
+cascade 'rename', :mode => :local do
   flow 'rename' do
     source 'input', tap('samples/data/data2.txt')
 

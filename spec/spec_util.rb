@@ -23,7 +23,7 @@ module Cascading
 end
 
 def test_flow(&block)
-  cascade = cascade 'test_app' do
+  cascade = cascade 'test_app', :mode => :local do
     flow 'test', &block
   end
   cascade.complete(local_properties(BUILD_DIR))

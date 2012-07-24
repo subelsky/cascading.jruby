@@ -5,7 +5,7 @@ $: << File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'cascading'
 
-cascade 'project' do
+cascade 'project', :mode => :local do
   flow 'project' do
     source 'input', tap('samples/data/data2.txt')
 

@@ -87,7 +87,7 @@ module Cascading
 
     def add(name, instance)
       @registered ||= {}
-      warn "WARNING: node named '#{name}' already registered in #{self}" if @registered[name]
+      warn "WARNING: Node named '#{name}' already registered in #{self}" if @registered[name]
       @registered[name] = instance
     end
 

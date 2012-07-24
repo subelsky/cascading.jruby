@@ -3,7 +3,7 @@ $: << File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'cascading'
 
-cascade 'logwordcount' do
+cascade 'logwordcount', :mode => :local do
   flow 'logwordcount' do
     # This works just as well, but will get you blocked by Project Gutenberg
     #source 'input', tap('http://www.gutenberg.org/files/20417/20417-8.txt')

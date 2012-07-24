@@ -9,14 +9,23 @@ module Cascading
   class Cascade < Cascading::Node
     extend Registerable
 
-    def initialize(name)
+    attr_reader :mode
+
+    # Builds a cascade given the specified name.  Optionally accepts a :mode
+    # which will be used as the default mode for all child flows.  See
+    # Cascading::Mode.parse for details.
+    def initialize(name, params = {})
+      @mode = params[:mode]
       super(name, nil) # A Cascade cannot have a parent
       self.class.add(name, self)
     end
 
-    def flow(name, &block)
+    # Builds a child flow given a name and block.  Optionally accepts a :mode,
+    # which will override the default mode stored in this cascade.
+    def flow(name, params = {}, &block)
       raise "Could not build flow '#{name}'; block required" unless block_given?
-      flow = Flow.new(name, self)
+      params[:mode] ||= mode
+      flow = Flow.new(name, self, params)
       add_child(flow)
       flow.instance_eval(&block)
       flow

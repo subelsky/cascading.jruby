@@ -31,7 +31,16 @@ class TC_Cascading < Test::Unit::TestCase
 
   def test_tap
     tap = tap('/tmp')
-    assert_equal '/tmp', tap.getPath().toString()
-    assert tap.is_a? Java::CascadingTapHadoop::Hfs
+    assert tap.is_a? Cascading::Tap
+    assert_equal '/tmp', tap.path
+    assert_equal text_line_scheme, tap.scheme
+
+    assert tap.local?
+    assert_equal '/tmp', tap.hadoop_tap.identifier
+    assert tap.hadoop_tap.is_a? Java::CascadingTapHadoop::Hfs
+
+    assert tap.hadoop?
+    assert_equal '/tmp', tap.local_tap.identifier
+    assert tap.local_tap.is_a? Java::CascadingTapLocal::FileTap
   end
 end

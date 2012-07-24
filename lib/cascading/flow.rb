@@ -10,9 +10,14 @@ module Cascading
     extend Registerable
 
     attr_accessor :properties, :sources, :sinks, :incoming_scopes, :outgoing_scopes, :listeners
+    attr_reader :mode
 
-    def initialize(name, parent)
+    # Builds a flow given a name and a parent node (a cascade or nil).
+    # Optionally accepts a :mode which will determine the execution mode of
+    # this flow.  See Cascading::Mode.parse for details.
+    def initialize(name, parent, params = {})
       @properties, @sources, @sinks, @incoming_scopes, @outgoing_scopes, @listeners = {}, {}, {}, {}, {}, []
+      @mode = Mode.parse(params[:mode])
       super(name, parent)
       self.class.add(name, self)
     end
@@ -28,7 +33,7 @@ module Cascading
     # Create a new source for this flow, using the specified name and c.Tap.
     def source(name, tap)
       sources[name] = tap
-      incoming_scopes[name] = Scope.tap_scope(tap, name)
+      incoming_scopes[name] = Scope.tap_scope(mode.source_tap(name, tap), name)
       outgoing_scopes[name] = incoming_scopes[name]
     end
 
@@ -135,12 +140,10 @@ module Cascading
       Java::CascadingProperty::AppProps.setApplicationName(properties, name)
       Java::CascadingProperty::AppProps.setApplicationVersion(properties, '0.0.0')
 
-      Java::CascadingFlowHadoop::HadoopFlowConnector.new(properties).connect(
-        name,
-        make_tap_parameter(@sources, :head_pipe),
-        make_tap_parameter(@sinks, :tail_pipe),
-        make_pipes
-      )
+      sources = make_tap_parameter(@sources, :head_pipe)
+      sinks = make_tap_parameter(@sinks, :tail_pipe)
+      pipes = make_pipes
+      mode.connect_flow(properties, name, sources, sinks, pipes)
     end
 
     def complete(properties = nil)

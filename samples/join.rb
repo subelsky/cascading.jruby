@@ -3,7 +3,7 @@ $: << File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'cascading'
 
-cascade 'join' do
+cascade 'join', :mode => :local do
   flow 'join' do
     source 'input1', tap('samples/data/data_join1.txt')
     source 'input2', tap('samples/data/data_join2.txt')

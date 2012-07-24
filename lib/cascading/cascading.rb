@@ -12,17 +12,21 @@ module Cascading
     :float => java.lang.Float.java_class, :string => java.lang.String.java_class,
   }
 
-  def cascade(name, &block)
+  # Builds a top-level cascade given a name and a block.  Optionally accepts a
+  # :mode, as explained in Cascading::Cascade#initialize.
+  def cascade(name, params = {}, &block)
     raise "Could not build cascade '#{name}'; block required" unless block_given?
-    cascade = Cascade.new(name)
+    cascade = Cascade.new(name, params)
     cascade.instance_eval(&block)
     cascade
   end
 
-  # For applications built of Flows with no Cascades
-  def flow(name, &block)
+  # Builds a top-level flow given a name and block for applications built of
+  # flows with no cascades.  Optionally accepts a :mode, as explained in
+  # Cascading::Flow#initialize.
+  def flow(name, params = {}, &block)
     raise "Could not build flow '#{name}'; block required" unless block_given?
-    flow = Flow.new(name, nil)
+    flow = Flow.new(name, nil, params)
     flow.instance_eval(&block)
     flow
   end
@@ -91,7 +95,9 @@ module Cascading
     Java::CascadingTuple::Fields::RESULTS
   end
 
-  # Creates a c.s.h.TextLine scheme.  Positional args are used if <tt>:source_fields</tt> is not provided.
+  # Creates a TextLine scheme (can be used in both Cascading local and hadoop
+  # modes).  Positional args are used if <tt>:source_fields</tt> is not
+  # provided.
   #
   # The named options are:
   # * <tt>:source_fields</tt> a string or array of strings.  Specifies the
@@ -100,7 +106,7 @@ module Cascading
   #   to be written to a sink with this scheme.  Defaults to all_fields.
   # * <tt>:compression</tt> a symbol, either <tt>:enable</tt> or
   #   <tt>:disable</tt>, that governs the TextLine scheme's compression.  Defaults
-  #   to the default TextLine compression.
+  #   to the default TextLine compression (only applies to c.s.h.TextLine).
   def text_line_scheme(*args)
     options = args.extract_options!
     source_fields = fields(options[:source_fields] || (args.empty? ? ['offset', 'line'] : args))
@@ -111,39 +117,33 @@ module Cascading
       else Java::CascadingSchemeHadoop::TextLine::Compress::DEFAULT
     end
 
-    Java::CascadingSchemeHadoop::TextLine.new(source_fields, sink_fields, sink_compression)
+    {
+      :local_scheme => Java::CascadingSchemeLocal::TextLine.new(source_fields, sink_fields),
+      :hadoop_scheme => Java::CascadingSchemeHadoop::TextLine.new(source_fields, sink_fields, sink_compression),
+    }
   end
 
-  # Creates a c.s.h.SequenceFile scheme instance from the specified fields.
+  # Creates a c.s.h.SequenceFile scheme instance from the specified fields.  A
+  # local SequenceFile scheme is not provided by Cascading, so this scheme
+  # cannot be used in Cascading local mode.
   def sequence_file_scheme(*fields)
-    unless fields.empty?
-      fields = fields(fields)
-      return Java::CascadingSchemeHadoop::SequenceFile.new(fields)
-    else
-      return Java::CascadingSchemeHadoop::SequenceFile.new(all_fields)
-    end
+    {
+      :local_scheme => nil,
+      :hadoop_scheme => Java::CascadingSchemeHadoop::SequenceFile.new(fields.empty? ? all_fields : fields(fields)),
+    }
   end
 
   def multi_source_tap(*taps)
-    Java::CascadingTap::MultiSourceTap.new(taps.to_java('cascading.tap.Tap'))
+    MultiTap.multi_source_tap(taps)
   end
 
   def multi_sink_tap(*taps)
-    Java::CascadingTap::MultiSinkTap.new(taps.to_java('cascading.tap.Tap'))
+    MultiTap.multi_sink_tap(taps)
   end
 
-  # Creates a c.t.h.Hfs c.t.Tap given a path and optional :scheme and
-  # :sink_mode.
+  # Creates a Cascading::Tap given a path and optional :scheme and :sink_mode.
   def tap(path, params = {})
-    scheme = params[:scheme] || text_line_scheme
-    sink_mode = params[:sink_mode] || :keep
-    sink_mode = case sink_mode
-      when :keep, 'keep'       then Java::CascadingTap::SinkMode::KEEP
-      when :replace, 'replace' then Java::CascadingTap::SinkMode::REPLACE
-      when :append, 'append'   then Java::CascadingTap::SinkMode::APPEND
-      else raise "Unrecognized sink mode '#{sink_mode}'"
-    end
-    Java::CascadingTapHadoop::Hfs.new(scheme, path, sink_mode)
+    Tap.new(path, params)
   end
 
   # Constructs properties to be passed to Flow#complete or Cascade#complete

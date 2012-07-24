@@ -3,7 +3,7 @@ require 'cascading'
 
 class TC_LocalExecution < Test::Unit::TestCase
   def test_smoke_test_multi_source_tap
-    cascade 'splitter' do
+    cascade 'splitter', :mode => :local do
       flow 'splitter' do
         tap1 = tap 'test/data/data1.txt'
         tap2 = tap 'test/data/data2.txt'
@@ -19,7 +19,7 @@ class TC_LocalExecution < Test::Unit::TestCase
   end
 
   def test_smoke_test_sequence_file_scheme
-    cascade 'smoke' do
+    cascade 'smoke', :mode => :local do
       flow 'smoke' do
         source 'input', tap('test/data/data1.txt')
         assembly 'input' do
@@ -32,7 +32,7 @@ class TC_LocalExecution < Test::Unit::TestCase
   end
 
   def test_splitter
-    flow = flow 'splitter' do
+    flow = flow 'splitter', :mode => :local do
       source 'copy', tap('test/data/data1.txt')
 
       assembly 'copy' do
@@ -47,7 +47,7 @@ class TC_LocalExecution < Test::Unit::TestCase
   end
 
   def test_smoke_test_multi_source_tap
-    cascade 'multi_source_tap' do
+    cascade 'multi_source_tap', :mode => :local do
       flow 'multi_source_tap' do
         tap1 = tap 'test/data/data1.txt'
         tap2 = tap 'test/data/data2.txt'
@@ -64,7 +64,7 @@ class TC_LocalExecution < Test::Unit::TestCase
 
   def test_join1
     join_grouping_fields, join_values_fields = nil, nil
-    cascade 'splitter' do
+    cascade 'splitter', :mode => :local do
       flow 'splitter' do
         source 'data1', tap('test/data/data1.txt')
         source 'data2', tap('test/data/data2.txt')
@@ -101,7 +101,7 @@ class TC_LocalExecution < Test::Unit::TestCase
 
   def test_join2
     join_grouping_fields, join_values_fields = nil, nil
-    flow = flow 'splitter' do
+    flow = flow 'splitter', :mode => :local do
       source 'data1', tap('test/data/data1.txt')
       source 'data2', tap('test/data/data2.txt')
 
@@ -129,7 +129,7 @@ class TC_LocalExecution < Test::Unit::TestCase
 
   def test_union
     union_grouping_fields, union_values_fields = nil, nil
-    cascade 'union' do
+    cascade 'union', :mode => :local do
       flow 'union' do
         source 'data1', tap('test/data/data1.txt')
         source 'data2', tap('test/data/data2.txt')
