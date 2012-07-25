@@ -1,8 +1,9 @@
-# A Cascading::Mode encapsulates the idea of the execution mode for your flows.
-# The default is Hadoop mode, but you can request that your code run in
-# Cascading local mode.  If you subsequently use a tap or a scheme that has no
-# local implementation, the mode will be converted back to Hadoop mode.
 module Cascading
+  # A Cascading::Mode encapsulates the idea of the execution mode for your
+  # flows.  The default is Hadoop mode, but you can request that your code run
+  # in Cascading local mode.  If you subsequently use a tap or a scheme that
+  # has no local implementation, the mode will be converted back to Hadoop
+  # mode.
   class Mode
     attr_reader :local
 
