@@ -4,7 +4,7 @@ Some hacking info on `cascading.jruby`:
 
 For local development, install with (requires [bundler](http://gembundler.com/)):
 
-    bundle install
+    jruby -S bundle install
 
 To run the tests (will download Cascading and Hadoop jars):
 
