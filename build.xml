@@ -3,10 +3,6 @@
   <property environment="env" />
   <property file="${basedir}/build.properties" />
 
-  <!-- Be careful setting this property.  Doing so means you've already downloaded
-       Ivy and resolved, cached, and retrieved this project's dependencies. -->
-  <property name="offline" value="false" />
-
   <property name="src.jruby" location="${basedir}/lib" />
   <property name="src.java" location="${basedir}/src" />
   <property name="build.dir" location="${basedir}/build" />
@@ -21,14 +17,14 @@
   <property name="ivy.jar.dir" value="${ivy.home}/lib" />
   <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
 
-  <target name="download-ivy" unless="${offline}">
+  <target name="download-ivy">
     <mkdir dir="${ivy.jar.dir}"/>
     <get
       src="http://repo2.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" 
       dest="${ivy.jar.file}" usetimestamp="true"/>
   </target>
 
-  <target name="init-ivy" depends="download-ivy" unless="${offline}">
+  <target name="init-ivy" depends="download-ivy">
     <path id="ivy.lib.path">
       <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
     </path>
@@ -37,7 +33,7 @@
     <ivy:settings file="${basedir}/ivysettings.xml" />
   </target>
 
-  <target name="retrieve" depends="init-ivy" unless="${offline}">
+  <target name="retrieve" depends="init-ivy">
     <ivy:retrieve pattern="${build.lib}/[artifact]-[revision].[ext]" conf="*" />
   </target>
 
