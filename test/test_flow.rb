@@ -113,4 +113,24 @@ class TC_Flow < Test::Unit::TestCase
     end
     assert_equal "Ambiguous lookup of child by name 'b'; found 'flow.b', 'flow.a.b'", ex.message
   end
+
+  def test_smoke_test_describe
+    cascade 'smoke' do
+      flow 'smoke' do
+        puts "Describe at flow start: '#{describe}'"
+        source 'input', tap('test/data/data1.txt')
+
+        puts "Describe before first assembly: '#{describe}'"
+        assembly 'input' do
+          group_by 'line' do
+            count
+            sum 'offset', :type => :long
+          end
+        end
+
+        sink 'input', tap('output/test_smoke_test_debug_scope')
+        puts "Describe at flow end: '#{describe}'"
+      end
+    end
+  end
 end

@@ -99,4 +99,23 @@ class TC_Cascade < Test::Unit::TestCase
     # NOTE: Looking up flows this way is not a very common practice, so this is
     # unlikely to cause issues
   end
+
+  def test_smoke_test_describe
+    cascade 'smoke' do
+      puts "Describe at cascade start: '#{describe}'"
+
+      flow 'smoke' do
+        source 'input', tap('test/data/data1.txt')
+        assembly 'input' do
+          group_by 'line' do
+            count
+            sum 'offset', :type => :long
+          end
+        end
+        sink 'input', tap('output/test_smoke_test_debug_scope')
+      end
+
+      puts "Describe at cascade end: '#{describe}'"
+    end
+  end
 end

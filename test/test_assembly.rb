@@ -610,6 +610,24 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal Java::CascadingOperationExpression::ExpressionFilter, assembly.tail_pipe.operation.class
   end
 
+  def test_smoke_test_describe
+    cascade 'smoke' do
+      flow 'smoke' do
+        source 'input', tap('test/data/data1.txt')
+        assembly 'input' do
+          puts "Describe at assembly start: '#{describe}'"
+          group_by 'line' do
+            count
+            sum 'offset', :type => :long
+            puts "Describe at group_by end (falls out to top-level Cascading::describe): '#{describe}'"
+          end
+          puts "Describe at assembly end: '#{describe}'"
+        end
+        sink 'input', tap('output/test_smoke_test_debug_scope')
+      end
+    end
+  end
+
   def test_smoke_test_debug_scope
     cascade 'smoke' do
       flow 'smoke' do
