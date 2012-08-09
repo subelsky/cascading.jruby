@@ -1,15 +1,7 @@
-.bnsignore
-.hg
-.hgignore
 build
 input
 out
 output
-*.iml
-*.ipr
-*.iws
 classes/
-.classpath
-.project
-pkg/
 tags
+*.gem

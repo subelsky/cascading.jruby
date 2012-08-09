@@ -1,27 +1,16 @@
-
-if HAVE_GIT
-
 namespace :git do
-
-  # A prerequisites task that all other tasks depend upon
-  task :prereqs
-
-  desc 'Show tags from the Git repository'
-  task :show_tags => 'git:prereqs' do |t|
-    puts %x/git tag/
-  end
-
   desc 'Create a new tag in the Git repository'
-  task :create_tag => 'git:prereqs' do |t|
+  task :create_tag do |t|
+    expected_version = Cascading::VERSION
     v = ENV['VERSION'] or abort 'Must supply VERSION=x.y.z'
-    abort "Versions don't match #{v} vs #{PROJ.version}" if v != PROJ.version
+    abort "Versions mismatch #{v} != #{expected_version}" if v != expected_version
 
-    tag = "%s-%s" % [PROJ.name, PROJ.version]
-    msg = "Creating tag for #{PROJ.name} version #{PROJ.version}"
+    tag = "%s-%s" % ['cascading.jruby', v]
+    msg = "Creating tag for cascading.jruby version #{v}"
 
     puts "Creating Git tag '#{tag}'"
-    unless system "git tag -a -m '#{msg}' #{tag}"
-      abort "Tag creation failed"
+    unless system("git tag -a -m '#{msg}' #{tag}")
+      abort 'Tag creation failed'
     end
 
     if %x/git remote/ =~ %r/^origin\s*$/
@@ -30,11 +19,6 @@ namespace :git do
       end
     end
   end
-
-end  # namespace :git
+end
 
 task 'gem:release' => 'git:create_tag'
-
-end  # if HAVE_GIT
-
-# EOF

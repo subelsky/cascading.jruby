@@ -1,7 +1,3 @@
-# Copyright 2009, Grégoire Marabout. All Rights Reserved.
-#
-# This is free software. Please see the LICENSE and COPYING files for details.
-
 module Cascading
   class Node
     attr_accessor :name, :parent, :children, :child_names, :last_child

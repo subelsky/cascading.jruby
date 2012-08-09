@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright 2009, Grégoire Marabout. All Rights Reserved.
-#
-# This is free software. Please see the LICENSE and COPYING files for details.
-
 require 'cascading/base'
 require 'cascading/operations'
 require 'cascading/aggregations'
