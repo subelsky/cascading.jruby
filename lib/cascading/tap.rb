@@ -9,6 +9,10 @@ module Cascading
       @hadoop_tap = hadoop_tap
     end
 
+    def to_s
+      "Local: #{local_tap}, Hadoop: #{hadoop_tap}"
+    end
+
     def local?
       !local_tap.nil?
     end
