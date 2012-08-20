@@ -370,28 +370,15 @@ class TC_Assembly < Test::Unit::TestCase
     end
 
     assert_equal Java::CascadingPipe::CoGroup, assembly.tail_pipe.class
+
     left_grouping_fields = assembly.tail_pipe.key_selectors['test1']
     assert_equal ['name', 'id'], left_grouping_fields.to_a
+
     right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
     assert_equal ['name', 'id'], right_grouping_fields.to_a
 
     assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], assembly.scope.values_fields.to_a
     assert_equal ['name', 'id', 'name_', 'id_'], assembly.scope.grouping_fields.to_a
-    
-    assembly = mock_two_input_assembly do
-      hash_join 'test1', 'test2', :on => 'id'
-    end
-
-    assert_equal Java::CascadingPipe::HashJoin, assembly.tail_pipe.class
-    left_grouping_fields = assembly.tail_pipe.key_selectors['test1']
-    assert_equal ['id'], left_grouping_fields.to_a
-    right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
-    assert_equal ['id'], right_grouping_fields.to_a
-    assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], assembly.scope.values_fields.to_a
-    # NOTE: Since HashJoin doesn't do any grouping but is implemented as a GROUP
-    # only one of the key fields is chosen as the output grouping field.
-    assert_equal ['id'], assembly.scope.grouping_fields.to_a
-
   end
 
   def test_create_join_with_declared_fields
@@ -487,6 +474,22 @@ class TC_Assembly < Test::Unit::TestCase
 
   def test_create_hash_join
     assembly = mock_two_input_assembly do
+      hash_join 'test1', 'test2', :on => 'name'
+    end
+
+    assert_equal Java::CascadingPipe::HashJoin, assembly.tail_pipe.class
+
+    left_grouping_fields = assembly.tail_pipe.key_selectors['test1']
+    assert_equal ['name'], left_grouping_fields.to_a
+
+    right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
+    assert_equal ['name'], right_grouping_fields.to_a
+
+    assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], assembly.scope.values_fields.to_a
+    # NOTE: Why does HashJoin produce different grouping fields than CoGroup?
+    assert_equal ['name'], assembly.scope.grouping_fields.to_a
+
+    assembly = mock_two_input_assembly do
       hash_join 'test1', 'test2', :on => 'id'
     end
 
@@ -496,23 +499,8 @@ class TC_Assembly < Test::Unit::TestCase
     right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
     assert_equal ['id'], right_grouping_fields.to_a
     assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], assembly.scope.values_fields.to_a
-    # NOTE: Since HashJoin doesn't do any grouping but is implemented as a GROUP
-    # only one of the key fields is chosen as the output grouping field.
+    # NOTE: Why does HashJoin produce different grouping fields than CoGroup?
     assert_equal ['id'], assembly.scope.grouping_fields.to_a
-
-    assembly = mock_two_input_assembly do
-      hash_join 'test1', 'test2', :on => 'name'
-    end
-
-    assert_equal Java::CascadingPipe::HashJoin, assembly.tail_pipe.class
-    left_grouping_fields = assembly.tail_pipe.key_selectors['test1']
-    assert_equal ['name'], left_grouping_fields.to_a
-    right_grouping_fields = assembly.tail_pipe.key_selectors['test2']
-    assert_equal ['name'], right_grouping_fields.to_a
-    assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], assembly.scope.values_fields.to_a
-    # NOTE: Since HashJoin doesn't do any grouping but is implemented as a GROUP
-    # only one of the key fields is chosen as the output grouping field.
-    assert_equal ['name'], assembly.scope.grouping_fields.to_a
   end
 
   def create_hash_join_many_fields
@@ -529,6 +517,7 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['name', 'id'], right_grouping_fields.to_a
 
     assert_equal ['name', 'score1', 'score2', 'id', 'name_', 'id_', 'town'], assembly.scope.values_fields.to_a
+    # NOTE: Why does HashJoin produce different grouping fields than CoGroup?
     assert_equal ['name', 'id'], assembly.scope.grouping_fields.to_a
   end
 
@@ -546,6 +535,7 @@ class TC_Assembly < Test::Unit::TestCase
     assert_equal ['name'], right_grouping_fields.to_a
 
     assert_equal ['a', 'b', 'c', 'd', 'e', 'f', 'g'], assembly.scope.values_fields.to_a
+    # NOTE: Why does HashJoin produce different grouping fields than CoGroup?
     assert_equal ['name'], assembly.scope.grouping_fields.to_a
   end
 
