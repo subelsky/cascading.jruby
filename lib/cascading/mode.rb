@@ -41,6 +41,10 @@ module Cascading
       update_local_mode(sources, sinks)
       sources = select_taps(sources)
       sinks = select_taps(sinks)
+
+      # Report execution mode to stdout before connecting
+      puts "Connecting flow '#{name}' in #{local ? 'Cascading local mode' : 'Hadoop mode'}"
+
       flow_connector_class.new(properties).connect(name, sources, sinks, pipes)
     end
 
