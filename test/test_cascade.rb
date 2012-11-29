@@ -45,6 +45,67 @@ class TC_Cascade < Test::Unit::TestCase
     assert_equal 'cascade.flow2.assembly4', cascade.last_child.last_child.qualified_name
   end
 
+  def test_default_properties
+    f1, f2 = nil, nil
+    cascade = cascade 'cascade' do
+      f1 = flow 'flow1' do
+      end
+
+      f2 = flow 'flow2' do
+      end
+    end
+
+    assert_equal({}, cascade.properties)
+    assert_equal({}, f1.properties)
+    assert_equal({}, f2.properties)
+  end
+
+  def test_set_properties
+    # Simulate the global properties set by jading
+    $jobconf_properties = {
+      'external_no_overwrite' => 'external_no_overwrite',
+      'external_overwrite' => 'external_overwrite',
+    }
+
+    f1, f2 = nil, nil
+    cascade = cascade 'cascade' do
+      properties['external_overwrite'] = 'overwritten'
+      properties['internal_no_overwrite'] = 'internal_no_overwrite'
+      properties['internal_overwrite'] = 'internal_overwrite'
+
+      f1 = flow 'flow1' do
+        properties['external_overwrite'] = 'overwritten_flow1'
+        properties['internal_overwrite'] = 'overwritten_flow1'
+      end
+
+      f2 = flow 'flow2' do
+        properties['external_overwrite'] = 'overwritten_flow2'
+        properties['internal_overwrite'] = 'overwritten_flow2'
+      end
+    end
+
+    assert_equal({
+      'external_no_overwrite' => 'external_no_overwrite',
+      'external_overwrite' => 'overwritten',
+      'internal_no_overwrite' => 'internal_no_overwrite',
+      'internal_overwrite' => 'internal_overwrite',
+    }, cascade.properties)
+
+    assert_equal({
+      'external_no_overwrite' => 'external_no_overwrite',
+      'external_overwrite' => 'overwritten_flow1',
+      'internal_no_overwrite' => 'internal_no_overwrite',
+      'internal_overwrite' => 'overwritten_flow1',
+    }, f1.properties)
+
+    assert_equal({
+      'external_no_overwrite' => 'external_no_overwrite',
+      'external_overwrite' => 'overwritten_flow2',
+      'internal_no_overwrite' => 'internal_no_overwrite',
+      'internal_overwrite' => 'overwritten_flow2',
+    }, f2.properties)
+  end
+
   def test_ambiguous_flow_names
     ex = assert_raise AmbiguousNodeNameException do
       f1, a1, a2, f2, a3, a4 = [nil] * 6

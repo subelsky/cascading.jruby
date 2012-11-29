@@ -5,22 +5,35 @@ module Cascading
   class Cascade < Cascading::Node
     extend Registerable
 
-    attr_reader :mode
+    attr_reader :properties, :mode
 
-    # Builds a cascade given the specified name.  Optionally accepts a :mode
-    # which will be used as the default mode for all child flows.  See
-    # Cascading::Mode.parse for details.
+    # Do not use this constructor directly; instead, use Cascading::cascade to
+    # build cascades.
+    #
+    # Builds a cascade given the specified name.  Optionally accepts
+    # :properties which will be used as the default properties for all child
+    # flows.  Properties must be a Ruby Hash with string keys and values and
+    # will be copied before being passed into each flow in the cascade.  See
+    # Cascading::Flow#initialize for details on how flows handle properties.
+    # Optionally accepts a :mode which will be used as the default mode for all
+    # child flows.  See Cascading::Mode.parse for details.
     def initialize(name, params = {})
+      @properties = params[:properties] || {}
       @mode = params[:mode]
       super(name, nil) # A Cascade cannot have a parent
       self.class.add(name, self)
     end
 
-    # Builds a child flow given a name and block.  Optionally accepts a :mode,
-    # which will override the default mode stored in this cascade.
+    # Builds a child flow given a name and block.  Optionally accepts
+    # :properties which will override the default properties stroed in this
+    # cascade.  Optionally accepts a :mode, which will override the default
+    # mode stored in this cascade.
     def flow(name, params = {}, &block)
       raise "Could not build flow '#{name}'; block required" unless block_given?
+
+      params[:properties] ||= properties.dup
       params[:mode] ||= mode
+
       flow = Flow.new(name, self, params)
       add_child(flow)
       flow.instance_eval(&block)
@@ -31,9 +44,9 @@ module Cascading
       "#{offset}#{name}:cascade\n#{child_names.map{ |child| children[child].describe("#{offset}  ") }.join("\n")}"
     end
 
-    def draw(dir, properties = nil)
+    def draw(dir)
       @children.each do |name, flow|
-        flow.connect(properties).writeDOT("#{dir}/#{name}.dot")
+        flow.connect.writeDOT("#{dir}/#{name}.dot")
       end
     end
 
@@ -50,9 +63,9 @@ module Cascading
       end
     end
 
-    def complete(properties = nil)
+    def complete
       begin
-        Java::CascadingCascade::CascadeConnector.new.connect(name, make_flows(@children, properties)).complete
+        Java::CascadingCascade::CascadeConnector.new.connect(name, make_flows(@children)).complete
       rescue NativeException => e
         raise CascadingException.new(e, 'Error completing cascade')
       end
@@ -60,9 +73,9 @@ module Cascading
 
     private
 
-    def make_flows(flows, properties)
+    def make_flows(flows)
       flow_instances = flows.map do |name, flow|
-        cascading_flow = flow.connect(properties)
+        cascading_flow = flow.connect
         flow.listeners.each { |l| cascading_flow.addListener(l) }
         cascading_flow
       end

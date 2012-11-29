@@ -7,10 +7,31 @@ module Cascading
     :float => java.lang.Float.java_class, :string => java.lang.String.java_class,
   }
 
+  # FIXME: I consider $jobconf_properties to be a hack forced on us by the lack
+  # of properties handling in earlier versions of the gem.  Fully removing the
+  # hack would look like introducing a Job abstraction which instantiates user
+  # code, and allowing jading's runner to pass properties into that.  I've
+  # already taken the step to thread properties through cascades and flows
+  # rather than merge properties before connect, but we still require the
+  # global properties hack to integrate with external runner code (jading).
+  #
+  # Note that this would also mean we can get rid of the global "registries" of
+  # cascades and flows.  I've already eliminated most uses of these registries,
+  # but they are still required for the runner to find user code required in a
+  # previous step.  A Job abstraction would clean this up, as well.
+  #
+  # For now, it is important that people use these constructors rather than
+  # directly building their own cascades and flows so that jading can send them
+  # default properties.
+
   # Builds a top-level cascade given a name and a block.  Optionally accepts a
   # :mode, as explained in Cascading::Cascade#initialize.
   def cascade(name, params = {}, &block)
     raise "Could not build cascade '#{name}'; block required" unless block_given?
+    raise 'Cascading::cascade does not accept the :properties param only the global $jobconf_properties' if params[:properties]
+
+    params[:properties] = $jobconf_properties.dup if $jobconf_properties
+
     cascade = Cascade.new(name, params)
     cascade.instance_eval(&block)
     cascade
@@ -21,6 +42,10 @@ module Cascading
   # Cascading::Flow#initialize.
   def flow(name, params = {}, &block)
     raise "Could not build flow '#{name}'; block required" unless block_given?
+    raise 'Cascading::flow does not accept the :properties param only the global $jobconf_properties' if params[:properties]
+
+    params[:properties] = $jobconf_properties.dup if $jobconf_properties
+
     flow = Flow.new(name, nil, params)
     flow.instance_eval(&block)
     flow

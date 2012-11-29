@@ -4,14 +4,23 @@ module Cascading
   class Flow < Cascading::Node
     extend Registerable
 
-    attr_accessor :properties, :sources, :sinks, :incoming_scopes, :outgoing_scopes, :listeners
-    attr_reader :mode
+    attr_accessor :sources, :sinks, :incoming_scopes, :outgoing_scopes, :listeners
+    attr_reader :properties, :mode
 
+    # Do not use this constructor directly.  Instead, use Cascading::flow to
+    # build top-level flows and Cascade#flow to build flows within a Cascade.
+    #
     # Builds a flow given a name and a parent node (a cascade or nil).
-    # Optionally accepts a :mode which will determine the execution mode of
-    # this flow.  See Cascading::Mode.parse for details.
+    # Optionally accepts :properties which allows external configuration of
+    # this flow.  The flow will side-effect the properties during composition,
+    # then pass the modified properties along to the FlowConnector for
+    # execution. See Cascading::Cascade#initialize for details on how
+    # properties are propagated through cascades.  Optionally accepts a :mode
+    # which will determine the execution mode of this flow.  See
+    # Cascading::Mode.parse for details.
     def initialize(name, parent, params = {})
-      @properties, @sources, @sinks, @incoming_scopes, @outgoing_scopes, @listeners = {}, {}, {}, {}, {}, []
+      @sources, @sinks, @incoming_scopes, @outgoing_scopes, @listeners = {}, {}, {}, {}, []
+      @properties = params[:properties] || {}
       @mode = Mode.parse(params[:mode])
       @flow_scope = Scope.flow_scope(name)
       super(name, parent)
@@ -123,14 +132,9 @@ module Cascading
       end
     end
 
-    def connect(properties = nil)
-      # This ensures we have a hash, and that it is a Ruby Hash (because we
-      # also accept java.util.HashMap), then merges it with Flow properties
-      properties ||= {}
-      properties = java.util.HashMap.new(@properties.merge(Hash[*properties.to_a.flatten]))
-
+    def connect
       puts "Connecting flow '#{name}' with properties:"
-      properties.key_set.to_a.sort.each do |key|
+      properties.keys.sort.each do |key|
         puts "#{key}=#{properties[key]}"
       end
 
@@ -144,9 +148,9 @@ module Cascading
       mode.connect_flow(properties, name, sources, sinks, pipes)
     end
 
-    def complete(properties = nil)
+    def complete
       begin
-        flow = connect(properties)
+        flow = connect
         @listeners.each { |l| flow.addListener(l) }
         flow.complete
       rescue NativeException => e

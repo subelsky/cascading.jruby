@@ -45,7 +45,7 @@ module Cascading
       # Report execution mode to stdout before connecting
       puts "Connecting flow '#{name}' in #{local ? 'Cascading local mode' : 'Hadoop mode'}"
 
-      flow_connector_class.new(properties).connect(name, sources, sinks, pipes)
+      flow_connector_class.new(java.util.HashMap.new(properties)).connect(name, sources, sinks, pipes)
     end
 
     private
