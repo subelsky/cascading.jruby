@@ -711,5 +711,65 @@ module Cascading
       parameters = [into, key, value_selectors, num_values].compact
       each input, :function => Java::CascadingOperationFunction::UnGroup.new(*parameters), :output => output
     end
+
+    # Inserts one of two values into the dataflow based upon the result of the
+    # supplied filter on the input fields.  This is primarily useful for
+    # creating indicators from filters.
+    #
+    # Parameters:
+    # * <tt>input</tt> name of field to apply the filter.
+    # * <tt>filter</tt> Cascading Filter to apply.
+    # * <tt>keep_value</tt> Java value to produce when the filter would keep
+    #   the given input.
+    # * <tt>remove_value</tt> Java value to produce when the filter would
+    #   remove the given input.
+    #
+    # The named options are:
+    # * <tt>:into</tt> an output field name, defaulting to 'filter_value'.
+    # * <tt>:output</tt> an array of field names that specifies the fields to
+    #   retain in the output tuple.  Defaults to all_fields.
+    def set_value(input, filter, keep_value, remove_value, params = {})
+      into = fields(params[:into] || 'filter_value')
+      output = params[:output] || all_fields
+      each input, :function => Java::CascadingOperationFunction::SetValue.new(into, filter, keep_value, remove_value), :output => output
+    end
+
+    # Efficient way of inserting a null indicator for any field, even one that
+    # cannot be coerced to a string.  This is accomplished using Cascading's
+    # FilterNull and SetValue operators rather than Janino.  1 is produced if
+    # the field is null and 0 otherwise.
+    #
+    # Parameters:
+    # * <tt>input</tt> name of field to check for null.
+    #
+    # The named options are:
+    # * <tt>:into</tt> an output field name, defaulting to 'is_null'.
+    # * <tt>:output</tt> an array of field names that specifies the fields to
+    #   retain in the output tuple.  Defaults to all_fields.
+    def null_indicator(input, params = {})
+      into = fields(params[:into] || 'is_null')
+      output = params[:output] || all_fields
+      set_value input, Java::CascadingOperationFilter::FilterNull.new, 1.to_java, 0.to_java, :into => into, :output => output
+    end
+
+    # Given a field and a regex, returns an indicator that is 1 if the string
+    # contains at least 1 match and 0 otherwise.
+    #
+    # Parameters:
+    # * <tt>input</tt> field name or names that specifies the fields over which
+    #   to perform the match.
+    # * <tt>pattern</tt> regex to apply to the input.
+    #
+    # The named options are:
+    # * <tt>:into</tt> an output field name, defaulting to 'regex_contains'.
+    # * <tt>:output</tt> an array of field names that specifies the fields to
+    #   retain in the output tuple.  Defaults to all_fields.
+    def regex_contains(input, pattern, params = {})
+      input = fields(input)
+      pattern = pattern.to_s # Supports JRuby regexes
+      into = fields(params[:into] || 'regex_contains')
+      output = params[:output] || all_fields
+      set_value input, Java::CascadingOperationRegex::RegexFilter.new(pattern), 1.to_java, 0.to_java, :into => into, :output => output
+    end
   end
 end

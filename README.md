@@ -23,4 +23,4 @@ Or individually like this:
 
     ./samples/group_by.rb <output directory>
 
-This last invocation draws the group_by sample rather than running it, producing a dot file in the given output directory.
+This last invocation draws the group\_by sample rather than running it, producing a dot file in the given output directory.
