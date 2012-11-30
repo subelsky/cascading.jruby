@@ -677,5 +677,39 @@ module Cascading
 
       each args, :function => field_joiner(options), :output => output
     end
+
+    # Ungroups, or unpivots, a tuple (see Cascading's UnGroup at http://docs.cascading.org/cascading/2.0/javadoc/cascading/operation/function/UnGroup.html).
+    #
+    # You must provide :key and you must provide only one of :value_selectors
+    # and :num_values.
+    #
+    # The named options are:
+    # * <tt>:key</tt> required array of field names to replicate on every
+    #   output row in an ungrouped group.
+    # * <tt>:value_selectors</tt> an array of field names to ungroup.  Each
+    #   field will be ungrouped into an output tuple along with the key fields
+    #   in the order provided.
+    # * <tt>:num_values</tt> an integer specifying the number of fields to
+    #   ungroup into each output tuple (excluding the key fields).  All input
+    #   fields will be ungrouped.
+    # * <tt>:input</tt> an array of field names that specifies the fields to
+    #   input to UnGroup.  Defaults to all_fields.
+    # * <tt>:into</tt> an array of field names.  Default set by UnGroup.
+    # * <tt>:output</tt> an array of field names that specifies the fields to
+    #   produce as output of UnGroup.  Defaults to all_fields.
+    def ungroup(*args)
+      options = args.extract_options!
+      input = options[:input] || all_fields
+      into = fields(options[:into])
+      output = options[:output] || all_fields
+      key = fields(options[:key])
+
+      raise 'You must provide exactly one of :value_selectors or :num_values to ungroup' unless options.has_key?(:value_selectors) ^ options.has_key?(:num_values)
+      value_selectors = options[:value_selectors].map{ |vs| fields(vs) }.to_java(Java::CascadingTuple::Fields) if options.has_key?(:value_selectors)
+      num_values = options[:num_values] if options.has_key?(:num_values)
+
+      parameters = [into, key, value_selectors, num_values].compact
+      each input, :function => Java::CascadingOperationFunction::UnGroup.new(*parameters), :output => output
+    end
   end
 end
