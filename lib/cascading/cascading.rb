@@ -30,7 +30,7 @@ module Cascading
     raise "Could not build cascade '#{name}'; block required" unless block_given?
     raise 'Cascading::cascade does not accept the :properties param only the global $jobconf_properties' if params[:properties]
 
-    params[:properties] = $jobconf_properties.dup if $jobconf_properties
+    params[:properties] = $jobconf_properties.dup if defined?($jobconf_properties) && $jobconf_properties
 
     cascade = Cascade.new(name, params)
     cascade.instance_eval(&block)
@@ -44,7 +44,7 @@ module Cascading
     raise "Could not build flow '#{name}'; block required" unless block_given?
     raise 'Cascading::flow does not accept the :properties param only the global $jobconf_properties' if params[:properties]
 
-    params[:properties] = $jobconf_properties.dup if $jobconf_properties
+    params[:properties] = $jobconf_properties.dup if defined?($jobconf_properties) && $jobconf_properties
 
     flow = Flow.new(name, nil, params)
     flow.instance_eval(&block)
