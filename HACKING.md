@@ -18,6 +18,12 @@ To install it locally:
 
     jruby -S gem install cascading.jruby-xxx.gem
 
-The `Cascading::Operations` module is mixed-in the `Cascading::Assembly` class to provide some shortcuts for common operations.
+The file cascading/cascading.rb defines global helper methods for cascading like
+tap creation, fields creation, etc.
 
-The file cascading/cascading.rb defines global helper methods for cascading like tap creation, fields creation, etc.
+The `Cascading::Operations` module is deprecated.  The original idea from long
+ago is that it would be useful to mixin operator wrappers to places other than
+`Cascading::Assembly`, but this is not true.  Instead, put Eaches in
+`Cascading::Assembly`, Everies in `Cascading::Aggregations`, and any more
+generally useful utility code directly in the `Cascading` module
+(cascading/cascading.rb).

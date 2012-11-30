@@ -1,4 +1,15 @@
 module Cascading
+  # The Cascading::Operations module is deprecated.  The original idea from long
+  # ago is that it would be useful to mixin operator wrappers to places other
+  # than Cascading::Assembly, but this is not true.  Instead, put Eaches in
+  # Cascading::Assembly, Everies in Cascading::Aggregations, and any more
+  # generally useful utility code directly in the Cascading module
+  # (cascading/cascading.rb).
+  #
+  # Further, the entire *args pattern should be deprecated as it leads to
+  # functions that can only be understood by reading their code.  Instead,
+  # idiomatic Ruby (positional required params and a params hash for optional
+  # args) should be used.  See Cascading::Assembly#set_value for an example.
   module Operations
     def identity
       Java::CascadingOperation::Identity.new
