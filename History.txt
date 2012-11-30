@@ -1,3 +1,18 @@
+0.0.10 - Introduce Jading, cleanup, and library standardization
+
+This release removes the code associated with running jobs on a Hadoop cluster
+as that functionality is now moved to Jading.  This separates the DSL library (a
+gem) from the repository required to build and package job jars (Jading).
+Additionally, this release removes a lot of the auto-generated Rake garbage
+inherited from the original version and greatly streamlines the packaged gem.
+Finally, it starts the precedent for making the contract of operations idiomatic
+Ruby, removing the unnecessary Operations module, and eventually eliminating
+global cascade and flow registries.  A non-backwards compatible change was made
+to the contract of complete and draw which allowed the mechnism for propagating
+properties through a job to be righted and made more Hadoop-idiomatic.
+
+This release removes all the cruft associated with running jobs
+
 0.0.9 - Cascading local mode and upgrade to Cascading 2.0.0
 
 This release upgrades to Cascading 2.0.0 (final) and introduces Cascading local
