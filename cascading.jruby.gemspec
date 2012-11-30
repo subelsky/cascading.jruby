@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Matt Walker", "Gr\303\251goire Marabout"]
-  s.date = "2012-08-09"
+  s.date = "2012-11-30"
   s.description = "cascading.jruby is a small DSL above Cascading, written in JRuby"
   s.email = "mwalker@etsy.com"
   s.extra_rdoc_files = ["History.txt", "LICENSE.txt"]
