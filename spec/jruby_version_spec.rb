@@ -18,9 +18,13 @@ context Object do
       exception = ite
     end
 
-    # How can this be?  A nil exception?
     thrown.should == 'InvocationTargetException'
-    exception.should be_nil
+    if JRUBY_VERSION == '1.7.0'
+      exception.java_class.should be Java::JavaLangReflect::InvocationTargetException.java_class
+    else
+      # How can this be?  A nil exception?
+      exception.should be_nil
+    end
   end
 
   case JRUBY_VERSION
@@ -54,7 +58,7 @@ context Object do
       result = e.validate
       result.should == 0
     end
-  when '1.5.3', '1.6.5', '1.6.7.2'
+  when '1.5.3', '1.6.5', '1.6.7.2', '1.7.0'
     it 'should handle Fixnum -> Integer for ExprStub#eval' do
       e = ExprStub.new('x:int + y:int')
       result = e.eval(:x => 2, :y => 3)

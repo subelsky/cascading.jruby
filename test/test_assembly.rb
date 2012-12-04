@@ -711,7 +711,7 @@ class TC_Assembly < Test::Unit::TestCase
           end
           puts "Describe at assembly end: '#{describe}'"
         end
-        sink 'input', tap('output/test_smoke_test_debug_scope')
+        sink 'input', tap('output/test_smoke_test_describe')
       end
     end
   end

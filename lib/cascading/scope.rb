@@ -44,7 +44,7 @@ module Cascading
       begin
         fields = @scope.send(accessor)
         fields.nil? ? 'null' : fields.to_s
-      rescue
+      rescue Exception => e
         'ERROR'
       end
     end

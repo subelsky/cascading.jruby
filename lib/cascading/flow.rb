@@ -141,6 +141,7 @@ module Cascading
       # FIXME: why do I have to do this in 2.0 wip-255?
       Java::CascadingProperty::AppProps.setApplicationName(properties, name)
       Java::CascadingProperty::AppProps.setApplicationVersion(properties, '0.0.0')
+      Java::CascadingProperty::AppProps.setApplicationJarClass(properties, Java::CascadingFlow::Flow.java_class)
 
       sources = make_tap_parameter(@sources, :head_pipe)
       sinks = make_tap_parameter(@sinks, :tail_pipe)
