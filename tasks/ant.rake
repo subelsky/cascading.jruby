@@ -8,7 +8,7 @@ namespace :ant do
       `touch build/ivy/resolved`
     end
     Dir.glob('build/lib/*.jar').each do |jar|
-      $CLASSPATH << jar
+      require jar
     end
   end
 
