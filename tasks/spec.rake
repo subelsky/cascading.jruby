@@ -9,7 +9,7 @@ namespace :spec do
     t.spec_files = spec_files
     t.verbose = true
 
-    t.ruby_opts = ['-w']
+    t.ruby_opts += ['-w', '-J-cp ', '"build/lib/*"']
     t.spec_opts = []
     t.libs += ['lib']
   end

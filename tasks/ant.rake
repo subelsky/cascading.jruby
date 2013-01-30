@@ -7,8 +7,6 @@ namespace :ant do
       raise 'Ant retrieve failed' unless system('ant retrieve')
       `touch build/ivy/resolved`
     end
-    ENV['CASCADING_HOME'] = 'build/lib'
-    ENV['HADOOP_HOME'] = 'build/lib'
   end
 
   desc 'Builds Java source for inclusion in gem'
