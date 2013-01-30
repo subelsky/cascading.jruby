@@ -14,5 +14,5 @@ namespace :samples do
   end
 end
 
-desc 'Alias to samples:run'
-task :samples => 'samples:run'
+desc 'samples:run with dependencies resolved'
+task :samples => ['ant:retrieve', 'samples:run']

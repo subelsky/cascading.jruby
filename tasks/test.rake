@@ -8,5 +8,5 @@ namespace :test do
   end
 end
 
-desc 'Alias to test:run'
+desc 'test:run with dependencies resolved'
 task :test => ['ant:retrieve', 'test:run']

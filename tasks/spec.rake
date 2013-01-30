@@ -15,5 +15,5 @@ namespace :spec do
   end
 end
 
-desc 'Alias to spec:run'
-task :spec => 'spec:run'
+desc 'spec:run with dependencies resolved'
+task :spec => ['ant:retrieve', 'spec:run']
