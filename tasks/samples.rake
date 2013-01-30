@@ -8,10 +8,9 @@ namespace :samples do
     end
   end
 
-  desc 'Remove sample outputs and build artifacts (also cleans specs)'
+  desc 'Remove sample outputs'
   task :clean do
     `rm -rf output`
-    `rm -rf build`
   end
 end
 
